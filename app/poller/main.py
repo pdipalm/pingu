@@ -5,7 +5,7 @@ from app.models import IcmpTarget, HttpTarget
 from app.repos.results import insert_probe_result
 from app.repos.targets import fetch_enabled_icmp_targets, fetch_enabled_http_targets
 from app.poller.config import load_targets
-from app.poller.sync import sync_targets_to_db
+from app.repos.sync import sync_targets_to_db
 from app.poller.icmp import icmp_ping_once
 from app.poller.http import http_probe_once
 
