@@ -38,7 +38,7 @@ dbwatch:
 	FROM probe_results r \
 	JOIN targets t ON r.target_id = t.id \
 	ORDER BY r.ts DESC \
-	LIMIT 10;"'
+	LIMIT 30;"'
 
 clean:
 	docker compose down -v --rmi local

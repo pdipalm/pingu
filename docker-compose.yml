@@ -48,7 +48,7 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-    command: ["bash", "-lc", "alembic upgrade head && python -m app.poller"]
+    command: ["bash", "-lc", "alembic upgrade head && python -m app.poller.main"]
     cap_add:
       - NET_RAW
     restart: unless-stopped
