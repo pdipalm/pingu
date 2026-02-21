@@ -1,0 +1,14 @@
+targets:
+  - name: google-dns
+    type: icmp
+    host: 8.8.8.8
+    interval_seconds: 30
+    timeout_ms: 1000
+    enabled: true
+
+  - name: router
+    type: icmp
+    host: 192.168.1.1
+    interval_seconds: 30
+    timeout_ms: 1000
+    enabled: true
