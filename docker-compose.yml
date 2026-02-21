@@ -2,33 +2,85 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: pingu
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    expose:
+      - "5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d pingu"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 3s
       timeout: 3s
       retries: 5
     restart: unless-stopped
+    networks:
+      - internal
+  
+  bootstrap:
+    image: postgres:16
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      DB_APP_USER: ${DB_APP_USER}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: "no"
+    entrypoint: ["bash", "-lc"]
+    command: |
+      psql -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 \
+        -v DB_NAME="$POSTGRES_DB" \
+        -v DB_APP_USER="$DB_APP_USER" \
+        -v DB_APP_PASSWORD="$DB_APP_PASSWORD" <<'SQL'
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'DB_APP_USER') THEN
+          EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'DB_APP_USER', :'DB_APP_PASSWORD');
+        END IF;
+      END
+      $$;
+
+      -- Ensure app user can connect
+      DO $$
+      BEGIN
+        EXECUTE format('GRANT CONNECT ON DATABASE %I TO %I', :'DB_NAME', :'DB_APP_USER');
+      END
+      $$;
+
+      \connect :"DB_NAME"
+
+      GRANT USAGE, CREATE ON SCHEMA public TO :"DB_APP_USER";
+      GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO :"DB_APP_USER";
+      GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO :"DB_APP_USER";
+
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public
+      GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :"DB_APP_USER";
+
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public
+      GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO :"DB_APP_USER";
+      SQL
 
   migrate:
     build: .
     command: alembic upgrade head
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/pingu
+      DATABASE_URL: postgresql+psycopg://${DB_APP_USER}:${DB_APP_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
-      db:
-        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+    networks:
+      - internal
 
   api:
     build: .
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/pingu
+      DATABASE_URL: postgresql+psycopg://${DB_APP_USER}:${DB_APP_PASSWORD}@db:5432/${POSTGRES_DB}
       TARGETS_PATH: /app/targets.yaml
       LOG_LEVEL: info
     depends_on:
@@ -38,11 +90,13 @@ services:
       - "8000:8000"
     command: ["bash", "-lc", "alembic upgrade head && uvicorn app.api:app --host 0.0.0.0 --port 8000"]
     restart: unless-stopped
+    networks:
+      - internal
 
   poller:
     build: .
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/pingu
+      DATABASE_URL: postgresql+psycopg://${DB_APP_USER}:${DB_APP_PASSWORD}@db:5432/${POSTGRES_DB}
       TARGETS_PATH: /app/targets.yaml
       LOG_LEVEL: info
     depends_on:
@@ -52,6 +106,12 @@ services:
     cap_add:
       - NET_RAW
     restart: unless-stopped
+    networks:
+      - internal
 
 volumes:
   pgdata:
+
+networks:
+  internal:
+    internal: true
