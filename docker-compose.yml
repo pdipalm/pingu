@@ -20,51 +20,22 @@ services:
   
   bootstrap:
     image: postgres:16
-    environment:
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      DB_APP_USER: ${DB_APP_USER}
-      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
     networks:
       - internal
     restart: "no"
-    entrypoint: ["bash", "-lc"]
-    command: |
-      psql -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 \
-        -v DB_NAME="$POSTGRES_DB" \
-        -v DB_APP_USER="$DB_APP_USER" \
-        -v DB_APP_PASSWORD="$DB_APP_PASSWORD" <<'SQL'
-      DO $$
-      BEGIN
-        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'DB_APP_USER') THEN
-          EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'DB_APP_USER', :'DB_APP_PASSWORD');
-        END IF;
-      END
-      $$;
-
-      -- Ensure app user can connect
-      DO $$
-      BEGIN
-        EXECUTE format('GRANT CONNECT ON DATABASE %I TO %I', :'DB_NAME', :'DB_APP_USER');
-      END
-      $$;
-
-      \connect :"DB_NAME"
-
-      GRANT USAGE, CREATE ON SCHEMA public TO :"DB_APP_USER";
-      GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO :"DB_APP_USER";
-      GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO :"DB_APP_USER";
-
-      ALTER DEFAULT PRIVILEGES IN SCHEMA public
-      GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :"DB_APP_USER";
-
-      ALTER DEFAULT PRIVILEGES IN SCHEMA public
-      GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO :"DB_APP_USER";
-      SQL
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_APP_USER: ${DB_APP_USER}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./docker/db/bootstrap.sh:/bootstrap.sh:ro
+    entrypoint: ["bash", "/bootstrap.sh"]
 
   migrate:
     build: .
@@ -86,12 +57,13 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-    ports:
-      - "8000:8000"
     command: ["bash", "-lc", "alembic upgrade head && uvicorn app.api:app --host 0.0.0.0 --port 8000"]
     restart: unless-stopped
     networks:
       - internal
+      - public
+    ports:
+      - "8000:8000"
 
   poller:
     build: .
@@ -108,6 +80,7 @@ services:
     restart: unless-stopped
     networks:
       - internal
+      - public
 
 volumes:
   pgdata:
@@ -115,3 +88,5 @@ volumes:
 networks:
   internal:
     internal: true
+  public:
+    driver: bridge
