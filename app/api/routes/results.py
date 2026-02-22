@@ -15,7 +15,7 @@ from app.repos.results import (
     fetch_latest_result_by_target,
     fetch_latest_results,
 )
-from app.api.routes.constants import DEFAULT_LIMIT, MAX_LIMIT
+from app.api.constants import DEFAULT_LIMIT, MAX_LIMIT
 
 router = APIRouter()
 

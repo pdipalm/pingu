@@ -5,7 +5,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query
 from app.api.schemas import TargetResultsResponse, ProbeResultOut
-from app.api.routes.constants import DEFAULT_LIMIT, MAX_LIMIT
+from app.api.constants import DEFAULT_LIMIT, MAX_LIMIT
 from app.repos.results import fetch_results_for_target
 from app.repos.targets import fetch_target_by_id
 
