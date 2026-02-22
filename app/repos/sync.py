@@ -12,7 +12,7 @@ from app.repos.util import timed_execute
 def sync_targets_to_db(cfg_targets: list[TargetCfg], s: Session | None = None) -> None:
     cfg_by_name = {t.name: t for t in cfg_targets}
 
-    with session_scope(s) as session:
+    with session_scope(existing=s) as session:
         existing = timed_execute(
             session,
             text("SELECT id, name FROM targets"),

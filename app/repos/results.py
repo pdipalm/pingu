@@ -49,7 +49,7 @@ def fetch_latest_results(
         LIMIT :limit
     """
 
-    with session_scope(s) as session:
+    with session_scope(existing=s) as session:
         rows = (
             timed_execute(session, text(sql), params, label="fetch_latest_results").mappings().all()
         )
@@ -75,13 +75,13 @@ def fetch_latest_result_by_target(
             SELECT ts, success, latency_ms, status_code, error
             FROM probe_results
             WHERE target_id = t.id
-            ORDER BY ts DESC
+            ORDER BY ts DESC, id DESC
             LIMIT 1
         ) r ON true
         WHERE (:enabled_only = false OR t.enabled = true)
         ORDER BY t.name
         """
-    with session_scope(s) as session:
+    with session_scope(existing=s) as session:
         rows = (
             timed_execute(
                 session,
@@ -123,7 +123,7 @@ def fetch_results_for_target(
         LIMIT :limit
     """
 
-    with session_scope(s) as session:
+    with session_scope(existing=s) as session:
         rows = (
             timed_execute(session, text(sql), params, label="fetch_results_for_target")
             .mappings()
@@ -143,7 +143,7 @@ def insert_probe_result(
     error: str | None,
     s: Session | None = None,
 ) -> None:
-    with session_scope(s) as session:
+    with session_scope(existing=s) as session:
         timed_execute(
             session,
             text("""

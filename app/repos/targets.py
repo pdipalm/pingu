@@ -32,14 +32,14 @@ def fetch_all_targets(
         ORDER BY name
     """
 
-    with session_scope(s) as session:
+    with session_scope(existing=s) as session:
         rows = timed_execute(session, text(sql), params, label="fetch_all_targets").mappings().all()
 
     return [dict(r) for r in rows]
 
 
 def fetch_target_by_id(target_id: uuid.UUID, s: Session | None = None) -> dict | None:
-    with session_scope(s) as session:
+    with session_scope(existing=s) as session:
         row = (
             timed_execute(
                 session,
@@ -59,7 +59,7 @@ def fetch_target_by_id(target_id: uuid.UUID, s: Session | None = None) -> dict |
 
 
 def fetch_enabled_icmp_targets(s: Session | None = None) -> list[IcmpTarget]:
-    with session_scope(s) as session:
+    with session_scope(existing=s) as session:
         rows = (
             timed_execute(
                 session,
@@ -95,7 +95,7 @@ def fetch_enabled_icmp_targets(s: Session | None = None) -> list[IcmpTarget]:
 
 
 def fetch_enabled_http_targets(s: Session | None = None) -> list[HttpTarget]:
-    with session_scope(s) as session:
+    with session_scope(existing=s) as session:
         rows = (
             timed_execute(
                 session,

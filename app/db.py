@@ -8,12 +8,12 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
 
-engine: Engine = create_engine(
+_engine: Engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,  # avoids stale connections
 )
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+SessionLocal = sessionmaker(bind=_engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
 
 @contextmanager
@@ -40,14 +40,10 @@ def session_scope(existing: Session | None = None):
         s.close()
 
 
-def db_ok() -> bool:
-    """
-    Lightweight connectivity check for /health.
-    Returns True if we can connect and run `SELECT 1`.
-    """
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        return True
-    except Exception:
-        return False
+def db_ok(*, s: Session | None = None) -> bool:
+    with session_scope(existing=s) as db:
+        try:
+            db.execute(text("SELECT 1"))
+            return True
+        except Exception:
+            return False
