@@ -4,42 +4,12 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query
-
-from app.api.schemas import (
-    LatestResultByTargetItem,
-    ProbeResultOut,
-    TargetResultsResponse,
-    LatestResultByTargetResponse,
-    LatestResultItem,
-    LatestResultsResponse,
-)
-from app.repos.results import (
-    fetch_latest_result_by_target,
-    fetch_results_for_target,
-    fetch_latest_results,
-)
+from app.api.schemas import TargetResultsResponse, ProbeResultOut
+from app.api.routes.constants import DEFAULT_LIMIT, MAX_LIMIT
+from app.repos.results import fetch_results_for_target
 from app.repos.targets import fetch_target_by_id
 
 router = APIRouter()
-
-DEFAULT_LIMIT = 200
-MAX_LIMIT = 1000
-
-
-@router.get("/results/latest", response_model=LatestResultsResponse)
-def get_latest_result(
-    limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
-) -> LatestResultsResponse:
-    rows = fetch_latest_results(limit=limit)
-    return LatestResultsResponse(items=[LatestResultItem(**r) for r in rows])
-
-
-@router.get("/results/latest-by-target", response_model=LatestResultByTargetResponse)
-def get_latest_result_by_target() -> LatestResultByTargetResponse:
-    rows = fetch_latest_result_by_target()
-    return LatestResultByTargetResponse(
-        items=[LatestResultByTargetItem(**r) for r in rows]
-    )
 
 
 @router.get("/targets/{target_id}/results", response_model=TargetResultsResponse)
