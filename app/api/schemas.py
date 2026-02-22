@@ -57,5 +57,19 @@ class LatestResultByTargetItem(BaseModel):
     error: str | None = None
 
 
+class LatestResultItem(BaseModel):
+    target_id: uuid.UUID
+    target_name: str
+    ts: datetime
+    success: bool
+    latency_ms: int | None = None
+    status_code: int | None = None
+    error: str | None = None
+
+
+class LatestResultsResponse(BaseModel):
+    items: list[LatestResultItem]
+
+
 class LatestResultByTargetResponse(BaseModel):
     items: list[LatestResultByTargetItem]

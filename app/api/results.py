@@ -10,14 +10,28 @@ from app.api.schemas import (
     ProbeResultOut,
     TargetResultsResponse,
     LatestResultByTargetResponse,
+    LatestResultItem,
+    LatestResultsResponse,
 )
-from app.repos.results import fetch_latest_result_by_target, fetch_results_for_target
+from app.repos.results import (
+    fetch_latest_result_by_target,
+    fetch_results_for_target,
+    fetch_latest_results,
+)
 from app.repos.targets import fetch_target_by_id
 
 router = APIRouter()
 
 DEFAULT_LIMIT = 200
 MAX_LIMIT = 1000
+
+
+@router.get("/results/latest", response_model=LatestResultsResponse)
+def get_latest_result(
+    limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
+) -> LatestResultsResponse:
+    rows = fetch_latest_results(limit=limit)
+    return LatestResultsResponse(items=[LatestResultItem(**r) for r in rows])
 
 
 @router.get("/results/latest-by-target", response_model=LatestResultByTargetResponse)

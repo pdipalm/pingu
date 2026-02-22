@@ -5,6 +5,30 @@ from sqlalchemy.orm import Session
 from app.db import session_scope
 
 
+def fetch_latest_results(
+    limit: int = 200,
+    s: Session | None = None,
+) -> list[dict]:
+    limit = max(1, min(int(limit), 1000))
+    sql = """
+        SELECT
+            r.target_id,
+            t.name AS target_name,
+            r.ts,
+            r.success,
+            r.latency_ms,
+            r.status_code,
+            r.error
+        FROM probe_results r
+        JOIN targets t ON t.id = r.target_id
+        ORDER BY r.ts DESC
+        LIMIT :limit
+    """
+    with session_scope(s) as session:
+        rows = session.execute(text(sql), {"limit": limit}).mappings().all()
+    return [dict(r) for r in rows]
+
+
 def fetch_latest_result_by_target(
     enabled_only: bool = True,
     s: Session | None = None,
