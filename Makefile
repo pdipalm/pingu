@@ -15,9 +15,6 @@ POSTGRES_DB ?= pingu
 POSTGRES_USER ?= postgres
 DB_APP_USER ?= pingu_app
 
-# If you set DATABASE_URL in compose (recommended), you do not need it here.
-# DATABASE_URL ?= postgresql+psycopg://$(DB_APP_USER):$(DB_APP_PASSWORD)@db:5432/$(POSTGRES_DB)
-
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -26,6 +23,7 @@ help:
 	@printf "  up           Start services\n"
 	@printf "  down         Stop services\n"
 	@printf "  rebuild      Rebuild and restart services\n"
+	@printf "  full-rebuild Removes volumes, then rebuilds and restarts services\n"
 	@printf "  ps           Show containers\n"
 	@printf "  logs         Tail logs (all)\n"
 	@printf "  api-logs     Tail api logs\n"
@@ -46,6 +44,11 @@ down:
 
 .PHONY: rebuild
 rebuild:
+	$(COMPOSE) up -d --build
+
+.PHONY: full-rebuild
+full-rebuild:
+	$(COMPOSE) down -v
 	$(COMPOSE) up -d --build
 
 .PHONY: ps
