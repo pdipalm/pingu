@@ -5,16 +5,27 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.api.schemas import ProbeResultOut, TargetResultsResponse
-from app.repos.results import fetch_results_for_target
-from app.repos.targets import (
-    fetch_target_by_id,
-)  # reuse the 404 check you already built
+from app.api.schemas import (
+    LatestResultByTargetItem,
+    ProbeResultOut,
+    TargetResultsResponse,
+    LatestResultByTargetResponse,
+)
+from app.repos.results import fetch_latest_result_by_target, fetch_results_for_target
+from app.repos.targets import fetch_target_by_id
 
 router = APIRouter()
 
 DEFAULT_LIMIT = 200
 MAX_LIMIT = 1000
+
+
+@router.get("/results/latest-by-target", response_model=LatestResultByTargetResponse)
+def get_latest_result_by_target() -> LatestResultByTargetResponse:
+    rows = fetch_latest_result_by_target()
+    return LatestResultByTargetResponse(
+        items=[LatestResultByTargetItem(**r) for r in rows]
+    )
 
 
 @router.get("/targets/{target_id}/results", response_model=TargetResultsResponse)

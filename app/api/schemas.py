@@ -45,3 +45,17 @@ class TargetResultsResponse(BaseModel):
     target_id: uuid.UUID
     target_name: str
     items: list[ProbeResultOut]
+
+
+class LatestResultByTargetItem(BaseModel):
+    target_id: uuid.UUID
+    target_name: str
+    ts: datetime | None = None
+    success: bool | None = None
+    latency_ms: int | None = None
+    status_code: int | None = None
+    error: str | None = None
+
+
+class LatestResultByTargetResponse(BaseModel):
+    items: list[LatestResultByTargetItem]

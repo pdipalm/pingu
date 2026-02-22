@@ -5,6 +5,37 @@ from sqlalchemy.orm import Session
 from app.db import session_scope
 
 
+def fetch_latest_result_by_target(
+    enabled_only: bool = True,
+    s: Session | None = None,
+) -> list[dict]:
+    where_sql = "WHERE t.enabled = true" if enabled_only else ""
+    sql = f"""
+        SELECT
+            t.id AS target_id,
+            t.name AS target_name,
+            r.ts,
+            r.success,
+            r.latency_ms,
+            r.status_code,
+            r.error
+        FROM targets t
+        LEFT JOIN LATERAL (
+            SELECT ts, success, latency_ms, status_code, error
+            FROM probe_results
+            WHERE target_id = t.id
+            ORDER BY ts DESC
+            LIMIT 1
+        ) r ON true
+        {where_sql}
+        ORDER BY t.name
+    """
+    with session_scope(s) as session:
+        rows = session.execute(text(sql)).mappings().all()
+
+    return [dict(r) for r in rows]
+
+
 def fetch_results_for_target(
     target_id: uuid.UUID,
     *,
