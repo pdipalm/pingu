@@ -1,30 +1,8 @@
 import uuid
 
-from sqlalchemy import text
-
 from app.models import HttpTarget, IcmpTarget
 from app.repos import targets as targets_repo
-
-
-def insert_target(
-    db_session, *, tid, name, type_, host, url, interval=30, timeout=1000, enabled=True
-):
-    db_session.execute(
-        text("""
-			INSERT INTO targets (id, name, type, host, url, interval_seconds, timeout_ms, enabled, created_at, updated_at)
-			VALUES (:id, :name, :type, :host, :url, :interval_seconds, :timeout_ms, :enabled, NOW(), NOW())
-			"""),
-        {
-            "id": tid,
-            "name": name,
-            "type": type_,
-            "host": host,
-            "url": url,
-            "interval_seconds": interval,
-            "timeout_ms": timeout,
-            "enabled": enabled,
-        },
-    )
+from tests.helpers import insert_target
 
 
 def test_fetch_all_and_by_id_and_enabled_filters(db_session):

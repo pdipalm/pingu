@@ -1,19 +1,8 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
-
 from app.repos import results as results_repo
-
-
-def insert_target(db_session, *, tid, name, type_="icmp"):
-    db_session.execute(
-        text("""
-			INSERT INTO targets (id, name, type, host, url, interval_seconds, timeout_ms, enabled, created_at, updated_at)
-			VALUES (:id, :name, :type, '127.0.0.1', NULL, 30, 1000, true, NOW(), NOW())
-			"""),
-        {"id": tid, "name": name, "type": type_},
-    )
+from tests.helpers import insert_target
 
 
 def test_insert_and_fetch_results(db_session):
