@@ -33,6 +33,10 @@ help:
 	@printf "  dbwatch      Watch latest probe results\n"
 	@printf "  bootstrap    Run bootstrap once\n"
 	@printf "\n"
+	@printf "  format       Run isort and black formatting\n"
+	@printf "  lint         Run isort, black, and mypy checks\n"
+	@printf "  fix          Auto-fix formatting issues\n"
+	@printf "  typecheck    Run mypy type checks\n"
 
 .PHONY: up
 up:
@@ -51,10 +55,22 @@ full-rebuild:
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --build
 
+.PHONY: format lint fix typecheck
+format:
+	isort .
+	black .
+
 lint:
-	isort app
-	black app
-	mypy app
+	isort . --check-only --diff
+	black . --check
+	mypy .
+
+fix:
+	isort .
+	black .
+
+typecheck:
+	mypy .
 
 .PHONY: ps
 ps:
