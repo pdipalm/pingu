@@ -8,6 +8,7 @@ async def http_probe_once(
 ) -> tuple[bool, int | None, int | None, str | None]:
     """
     Returns (success, latency_ms, status_code, error)
+    success = transport success (HTTP response received)
     """
     timeout_s = timeout_ms / 1000.0
 
@@ -17,9 +18,13 @@ async def http_probe_once(
             resp = await client.get(url)
             elapsed_ms = int((time.perf_counter() - start) * 1000)
 
-        success = 200 <= resp.status_code < 400
+        return True, elapsed_ms, resp.status_code, None
 
-        return success, elapsed_ms, resp.status_code, None
-
+    except httpx.TimeoutException:
+        return False, None, None, "timeout"
+    except httpx.ConnectError:
+        return False, None, None, "connect_error"
+    except httpx.HTTPError as e:
+        return False, None, None, f"http_error: {type(e).__name__}"
     except Exception as e:
         return False, None, None, str(e)[:500]
