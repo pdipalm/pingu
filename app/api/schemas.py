@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 
@@ -14,13 +14,14 @@ class HealthStats(BaseModel):
 
 
 class HealthResponse(BaseModel):
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     ok: bool
     db: bool
     thresholds: HealthThresholds
     stats: HealthStats
 
 
-class TargetOut(BaseModel):
+class TargetResponse(BaseModel):
     id: uuid.UUID
     name: str
     type: str
@@ -29,6 +30,11 @@ class TargetOut(BaseModel):
     timeout_ms: int = Field(..., ge=1)
     host: str | None = None
     url: str | None = None
+
+
+class TargetListResponse(BaseModel):
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    items: list[TargetResponse]
 
 
 class ProbeResultOut(BaseModel):
@@ -44,6 +50,7 @@ class ProbeResultOut(BaseModel):
 class TargetResultsResponse(BaseModel):
     target_id: uuid.UUID
     target_name: str
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     items: list[ProbeResultOut]
 
 
@@ -68,8 +75,10 @@ class LatestResultItem(BaseModel):
 
 
 class LatestResultsResponse(BaseModel):
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     items: list[LatestResultItem]
 
 
 class LatestResultByTargetResponse(BaseModel):
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     items: list[LatestResultByTargetItem]
