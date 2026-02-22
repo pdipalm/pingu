@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 from app.db import session_scope
 from app.models import IcmpTarget, HttpTarget
@@ -12,6 +13,24 @@ def fetch_all_targets(s: Session | None = None) -> list[dict]:
                 ORDER BY name
             """)).mappings().all()
     return [dict(r) for r in rows]
+
+
+def fetch_target_by_id(target_id: uuid.UUID, s: Session | None = None) -> dict | None:
+    with session_scope(s) as session:
+        row = (
+            session.execute(
+                text("""
+                SELECT id, name, type, enabled, interval_seconds, timeout_ms, host, url
+                FROM targets
+                WHERE id = :id
+                """),
+                {"id": target_id},
+            )
+            .mappings()
+            .one_or_none()
+        )
+
+    return dict(row) if row is not None else None
 
 
 def fetch_enabled_icmp_targets(s: Session | None = None) -> list[IcmpTarget]:
