@@ -10,14 +10,14 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 3s
       timeout: 3s
       retries: 5
     restart: unless-stopped
     networks:
       - internal
-  
+
   bootstrap:
     image: postgres:16
     depends_on:
@@ -35,7 +35,7 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./docker/db/bootstrap.sh:/bootstrap.sh:ro
-    entrypoint: ["bash", "/bootstrap.sh"]
+    entrypoint: [ "bash", "/bootstrap.sh" ]
 
   migrate:
     build: .
@@ -57,7 +57,7 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-    command: ["bash", "-lc", "alembic upgrade head && uvicorn app.api:app --host 0.0.0.0 --port 8000"]
+    command: [ "bash", "-lc", "alembic upgrade head && uvicorn app.api:app --host 0.0.0.0 --port 8000" ]
     restart: unless-stopped
     networks:
       - internal
@@ -74,7 +74,7 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-    command: ["bash", "-lc", "alembic upgrade head && python -m app.poller.main"]
+    command: [ "bash", "-lc", "alembic upgrade head && python -m app.poller.__main__" ]
     cap_add:
       - NET_RAW
     restart: unless-stopped
@@ -84,6 +84,7 @@ services:
 
 volumes:
   pgdata:
+
 
 networks:
   internal:

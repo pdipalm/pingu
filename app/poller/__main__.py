@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import datetime, timezone
 
 from app.config import settings
@@ -10,9 +11,14 @@ from app.repos.results import insert_probe_result
 from app.repos.sync import sync_targets_to_db
 from app.repos.targets import fetch_enabled_http_targets, fetch_enabled_icmp_targets
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
 
 async def poll_icmp_forever(t: IcmpTarget) -> None:
-    print(
+    logging.info(
         f"[poller] starting ICMP poll loop for {t.name} ({t.host}) every {t.interval_seconds}s"
     )
 
@@ -31,7 +37,7 @@ async def poll_icmp_forever(t: IcmpTarget) -> None:
 
 
 async def poll_http_forever(t: HttpTarget) -> None:
-    print(
+    logging.info(
         f"[poller] starting HTTP poll loop for {t.name} ({t.url}) every {t.interval_seconds}s"
     )
 
@@ -56,10 +62,10 @@ async def poll_http_forever(t: HttpTarget) -> None:
 
 
 async def main_async() -> None:
-    print(f"[poller] loading targets from {settings.targets_path}")
+    logging.info(f"[poller] loading targets from {settings.targets_path}")
     targets = load_targets(settings.targets_path)
     sync_targets_to_db(targets)
-    print(f"[poller] synced {len(targets)} targets into db")
+    logging.info(f"[poller] synced {len(targets)} targets into db")
 
     icmp_targets = fetch_enabled_icmp_targets()
     http_targets = fetch_enabled_http_targets()
@@ -73,7 +79,7 @@ async def main_async() -> None:
         tasks.append(asyncio.create_task(poll_http_forever(ht)))
 
     if not tasks:
-        print("[poller] no enabled targets; sleeping forever")
+        logging.info("[poller] no enabled targets; sleeping forever")
         while True:
             await asyncio.sleep(60)
 
