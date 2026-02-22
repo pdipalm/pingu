@@ -51,12 +51,10 @@ def insert_probe_result(
     owns_session = s is None
     with session_scope(s) as session:
         session.execute(
-            text(
-                """
+            text("""
                 INSERT INTO probe_results (target_id, ts, success, latency_ms, status_code, error)
                 VALUES (:target_id, :ts, :success, :latency_ms, :status_code, :error)
-                """
-            ),
+                """),
             {
                 "target_id": target_id,
                 "ts": ts,
