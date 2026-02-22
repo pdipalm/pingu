@@ -11,7 +11,7 @@
             },
             {
                 "match": ".*\\.py$",
-                "cmd": "./.venv/bin/mypy ${file}"
+                "cmd": "./.venv/bin/mypy ./app"
             }
         ]
     }
