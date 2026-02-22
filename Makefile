@@ -51,6 +51,11 @@ full-rebuild:
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --build
 
+lint:
+	isort app
+	black app
+	mypy app
+
 .PHONY: ps
 ps:
 	$(COMPOSE) ps
