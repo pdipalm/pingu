@@ -3,6 +3,10 @@ from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 
+def utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class HealthThresholds(BaseModel):
     stale_after_seconds: int = Field(..., ge=0)
 
@@ -33,7 +37,7 @@ class TargetResponse(BaseModel):
 
 
 class TargetListResponse(BaseModel):
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = Field(default_factory=utcnow)
     items: list[TargetResponse]
 
 
@@ -50,7 +54,7 @@ class ProbeResultOut(BaseModel):
 class TargetResultsResponse(BaseModel):
     target_id: uuid.UUID
     target_name: str
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = Field(default_factory=utcnow)
     items: list[ProbeResultOut]
 
 
@@ -75,10 +79,10 @@ class LatestResultItem(BaseModel):
 
 
 class LatestResultsResponse(BaseModel):
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = Field(default_factory=utcnow)
     items: list[LatestResultItem]
 
 
 class LatestResultByTargetResponse(BaseModel):
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = Field(default_factory=utcnow)
     items: list[LatestResultByTargetItem]
