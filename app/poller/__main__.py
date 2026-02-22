@@ -23,16 +23,45 @@ async def poll_icmp_forever(t: IcmpTarget) -> None:
     )
 
     while True:
-        ts = datetime.now(timezone.utc)
-        success, latency_ms, error = await icmp_ping_once(t.host, t.timeout_ms)
-        insert_probe_result(
-            target_id=t.id,
-            ts=ts,
-            success=success,
-            latency_ms=latency_ms,
-            status_code=None,
-            error=error,
-        )
+        try:
+            ts = datetime.now(timezone.utc)
+            success, latency_ms, error = await icmp_ping_once(t.host, t.timeout_ms)
+            if success:
+                logging.debug(
+                    "icmp success",
+                    extra={
+                        "target": t.name,
+                        "latency_ms": latency_ms,
+                    },
+                )
+                if latency_ms is not None and latency_ms > t.timeout_ms * 0.8:
+                    logging.info(
+                        "icmp slow response",
+                        extra={
+                            "target": t.name,
+                            "latency_ms": latency_ms,
+                        },
+                    )
+            else:
+                logging.warning(
+                    "icmp failure",
+                    extra={
+                        "target": t.name,
+                        "error": error,
+                    },
+                )
+            insert_probe_result(
+                target_id=t.id,
+                ts=ts,
+                success=success,
+                latency_ms=latency_ms,
+                status_code=None,
+                error=error,
+            )
+        except Exception as e:
+            logging.exception(
+                f"unexpected error during ICMP poll for target {t.name}: {e}"
+            )
         await asyncio.sleep(t.interval_seconds)
 
 
@@ -42,22 +71,53 @@ async def poll_http_forever(t: HttpTarget) -> None:
     )
 
     while True:
-        ts = datetime.now(timezone.utc)
+        try:
+            ts = datetime.now(timezone.utc)
 
-        success, latency_ms, status_code, error = await http_probe_once(
-            t.url,
-            t.timeout_ms,
-        )
+            success, latency_ms, status_code, error = await http_probe_once(
+                t.url,
+                t.timeout_ms,
+            )
 
-        insert_probe_result(
-            target_id=t.id,
-            ts=ts,
-            success=success,
-            latency_ms=latency_ms,
-            status_code=status_code,
-            error=error,
-        )
+            if success:
+                logging.debug(
+                    "http success",
+                    extra={
+                        "target": t.name,
+                        "latency_ms": latency_ms,
+                        "status_code": status_code,
+                    },
+                )
+                if latency_ms is not None and latency_ms > t.timeout_ms * 0.8:
+                    logging.info(
+                        "http slow response",
+                        extra={
+                            "target": t.name,
+                            "latency_ms": latency_ms,
+                            "status_code": status_code,
+                        },
+                    )
+            else:
+                logging.warning(
+                    "http failure",
+                    extra={
+                        "target": t.name,
+                        "error": error,
+                    },
+                )
 
+            insert_probe_result(
+                target_id=t.id,
+                ts=ts,
+                success=success,
+                latency_ms=latency_ms,
+                status_code=status_code,
+                error=error,
+            )
+        except Exception as e:
+            logging.exception(
+                f"unexpected error during HTTP poll for target {t.name}: {e}"
+            )
         await asyncio.sleep(t.interval_seconds)
 
 
@@ -69,6 +129,11 @@ async def main_async() -> None:
 
     icmp_targets = fetch_enabled_icmp_targets()
     http_targets = fetch_enabled_http_targets()
+
+    logging.info(
+        "starting poll loops",
+        extra={"icmp": len(icmp_targets), "http": len(http_targets)},
+    )
 
     tasks = []
 
