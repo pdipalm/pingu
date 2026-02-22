@@ -1,13 +1,14 @@
 import asyncio
 from datetime import datetime, timezone
+
 from app.config import settings
-from app.models import IcmpTarget, HttpTarget
-from app.repos.results import insert_probe_result
-from app.repos.targets import fetch_enabled_icmp_targets, fetch_enabled_http_targets
+from app.models import HttpTarget, IcmpTarget
 from app.poller.config import load_targets
-from app.repos.sync import sync_targets_to_db
-from app.poller.icmp import icmp_ping_once
 from app.poller.http import http_probe_once
+from app.poller.icmp import icmp_ping_once
+from app.repos.results import insert_probe_result
+from app.repos.sync import sync_targets_to_db
+from app.repos.targets import fetch_enabled_http_targets, fetch_enabled_icmp_targets
 
 
 async def poll_icmp_forever(t: IcmpTarget) -> None:
@@ -65,11 +66,11 @@ async def main_async() -> None:
 
     tasks = []
 
-    for t in icmp_targets:
-        tasks.append(asyncio.create_task(poll_icmp_forever(t)))
+    for it in icmp_targets:
+        tasks.append(asyncio.create_task(poll_icmp_forever(it)))
 
-    for t in http_targets:
-        tasks.append(asyncio.create_task(poll_http_forever(t)))
+    for ht in http_targets:
+        tasks.append(asyncio.create_task(poll_http_forever(ht)))
 
     if not tasks:
         print("[poller] no enabled targets; sleeping forever")

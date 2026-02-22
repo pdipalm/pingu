@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from fastapi import APIRouter, Query
 
 from app.api.schemas import (
@@ -8,20 +10,19 @@ from app.api.schemas import (
     LatestResultItem,
     LatestResultsResponse,
 )
-from app.repos.results import (
-    fetch_latest_result_by_target,
-    fetch_latest_results,
-)
-from app.api.constants import DEFAULT_LIMIT, MAX_LIMIT
+from app.constants import DEFAULT_LIMIT, MAX_LIMIT
+from app.repos.results import fetch_latest_result_by_target, fetch_latest_results
 
 router = APIRouter()
 
 
 @router.get("/results/latest", response_model=LatestResultsResponse)
 def get_latest_result(
+    since: datetime | None = None,
+    until: datetime | None = None,
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
 ) -> LatestResultsResponse:
-    rows = fetch_latest_results(limit=limit)
+    rows = fetch_latest_results(since=since, until=until, limit=limit)
     return LatestResultsResponse(items=[LatestResultItem(**r) for r in rows])
 
 

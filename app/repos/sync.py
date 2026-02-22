@@ -1,9 +1,10 @@
 import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import text
 
 from app.db import SessionLocal
 from app.poller.config import TargetCfg
-from datetime import datetime, timezone
-from sqlalchemy import text
 
 
 def sync_targets_to_db(cfg_targets: list[TargetCfg]) -> None:
@@ -12,10 +13,9 @@ def sync_targets_to_db(cfg_targets: list[TargetCfg]) -> None:
     with SessionLocal() as s:
         existing = s.execute(text("SELECT id, name FROM targets")).all()
         existing_by_name: dict[str, uuid.UUID] = {row.name: row.id for row in existing}
-
+        now = datetime.now(timezone.utc)
         for name, t in cfg_by_name.items():
             existing_id = existing_by_name.get(name)
-            now = datetime.now(timezone.utc)
             if existing_id is None:
                 new_id = uuid.uuid4()
                 s.execute(
@@ -68,7 +68,7 @@ def sync_targets_to_db(cfg_targets: list[TargetCfg]) -> None:
                     text(
                         "UPDATE targets SET enabled = false, updated_at = :updated_at WHERE id = :id"
                     ),
-                    {"id": row.id, "updated_at": datetime.now(timezone.utc)},
+                    {"id": row.id, "updated_at": now},
                 )
 
         s.commit()
