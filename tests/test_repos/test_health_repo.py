@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from app.repos import health as health_repo
 from app.repos import results as results_repo
-from tests.helpers import insert_target
+from tests.db_helpers import insert_target
 
 
 def test_fetch_health_db_stats(db_session):

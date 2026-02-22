@@ -2,7 +2,7 @@ import uuid
 
 from app.models import HttpTarget, IcmpTarget
 from app.repos import targets as targets_repo
-from tests.helpers import insert_target
+from tests.db_helpers import insert_target
 
 
 def test_fetch_all_and_by_id_and_enabled_filters(db_session):

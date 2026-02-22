@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from app.repos import results as results_repo
-from tests.helpers import insert_target
+from tests.db_helpers import insert_target
 
 
 def test_insert_and_fetch_results(db_session):
