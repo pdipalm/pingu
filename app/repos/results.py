@@ -63,7 +63,7 @@ def fetch_latest_result_by_target(
     enabled_only: bool = True,
     s: Session | None = None,
 ) -> list[dict]:
-    sql = f"""
+    sql = """
         SELECT
             t.id AS target_id,
             t.name AS target_name,
