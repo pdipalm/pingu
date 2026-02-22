@@ -34,24 +34,61 @@ For non-HTTP probes, `status_code` is null.
 For successful probes, `error` is null.
 
 ## Health
-### GET `/health`
-Returns basic service status. Poller health is inferred via the most recent stored result timestamp.
 
-Response example:
+### GET `/health`
+
+Returns basic service status. Poller health is inferred from the most recent stored result timestamp.
+
+#### Response Example
+
 ```json
 {
   "ok": true,
   "db": true,
-  "enabled_targets": 6,
-  "last_result_ts": "2026-02-20T16:42:00Z",
-  "seconds_since_last_result": 12
+  "thresholds": {
+    "stale_after_seconds": 180
+  },
+  "stats": {
+    "enabled_targets": 6,
+    "last_result_ts": "2026-02-22T03:10:41.872795Z",
+    "seconds_since_last_result": 17
+  }
 }
 ```
 
-Notes:
-- ```db``` indicates whether the API could successfully query the database.
-- ```last_result_ts``` is the max timestamp across stored results.
-- ```seconds_since_last_result``` is computed by the API at request time
+#### Fields
+
+- `ok` (boolean)  
+  Overall service health indicator.  
+  - `true` if:
+    - The database is reachable, and
+    - The most recent result is within `stale_after_seconds`
+  - `false` otherwise.
+
+- `db` (boolean)  
+  Indicates whether the API was able to successfully query the database.
+
+- `thresholds.stale_after_seconds` (integer)  
+  Maximum allowed age in seconds of the most recent result before the service is considered stale.
+
+- `stats.enabled_targets` (integer)  
+  Count of currently enabled targets.
+
+- `stats.last_result_ts` (string | null)  
+  ISO 8601 UTC timestamp (with `Z` suffix) of the most recent stored result across all targets.  
+  `null` if no results exist.
+
+- `stats.seconds_since_last_result` (integer | null)  
+  Number of seconds between the current request time (UTC) and `last_result_ts`.  
+  `null` if no results exist.
+
+#### Health Evaluation Logic
+
+- `last_result_ts` is computed as `MAX(ts)` across all stored results.
+- `seconds_since_last_result` is computed by the API at request time.
+- The poller is considered healthy if:
+  - A recent result exists, and
+  - `seconds_since_last_result <= stale_after_seconds`.
 
 ## Targets
 ### GET ```/targets```
