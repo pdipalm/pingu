@@ -26,6 +26,8 @@ dev = [
   "black",
   "isort",
   "mypy",
+  "types-PyYAML",
+  "pytest",
 ]
 
 [tool.black]
