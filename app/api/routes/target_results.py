@@ -13,7 +13,12 @@ from app.repos.targets import fetch_target_by_id
 router = APIRouter()
 
 
-@router.get("/targets/{target_id}/results", response_model=TargetResultsResponse)
+@router.get(
+    "/targets/{target_id}/results",
+    summary="Get results for a specific target",
+    description="Get the results for a specific target. You can filter results by a time range using the `since` and `until` query parameters.",
+    response_model=TargetResultsResponse,
+)
 def get_target_results(
     target_id: uuid.UUID,
     since: datetime | None = None,

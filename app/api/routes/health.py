@@ -15,7 +15,12 @@ STALE_GRACE_MULT = 1.5
 MIN_STALE_SECONDS = 30
 
 
-@router.get("/health", response_model=HealthResponse)
+@router.get(
+    "/health",
+    summary="Health Check",
+    description="Check the health of the application. Returns the status of the database and the freshness of the latest results from the poller. The `ok` field is `true` if the database is reachable and the latest results are not stale.",
+    response_model=HealthResponse,
+)
 def health() -> HealthResponse:
     db = db_ok()
     if not db:

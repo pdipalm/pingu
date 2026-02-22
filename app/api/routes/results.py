@@ -16,7 +16,12 @@ from app.repos.results import fetch_latest_result_by_target, fetch_latest_result
 router = APIRouter()
 
 
-@router.get("/results/latest", response_model=LatestResultsResponse)
+@router.get(
+    "/results/latest",
+    summary="Get the latest results",
+    description="Get the latest results from the poller. You can filter results by a time range using the `since` and `until` query parameters.",
+    response_model=LatestResultsResponse,
+)
 def get_latest_result(
     since: datetime | None = None,
     until: datetime | None = None,
@@ -26,7 +31,12 @@ def get_latest_result(
     return LatestResultsResponse(items=[LatestResultItem(**r) for r in rows])
 
 
-@router.get("/results/latest-by-target", response_model=LatestResultByTargetResponse)
+@router.get(
+    "/results/latest-by-target",
+    summary="Get the latest result by target",
+    description="Get the latest result from each target.",
+    response_model=LatestResultByTargetResponse,
+)
 def get_latest_result_by_target() -> LatestResultByTargetResponse:
     rows = fetch_latest_result_by_target()
     return LatestResultByTargetResponse(

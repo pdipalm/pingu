@@ -9,7 +9,12 @@ from app.repos.targets import fetch_all_targets, fetch_target_by_id
 router = APIRouter()
 
 
-@router.get("/targets", response_model=TargetListResponse)
+@router.get(
+    "/targets",
+    response_model=TargetListResponse,
+    summary="List targets",
+    description="List all targets. You can filter by status using the `status` query parameter. By default, only enabled targets are returned. Status can be `enabled`, `disabled`, or `all`.",
+)
 def list_targets(
     status: Literal["enabled", "disabled", "all"] = Query("enabled"),
 ):
@@ -17,7 +22,12 @@ def list_targets(
     return {"items": [TargetResponse(**r) for r in rows]}
 
 
-@router.get("/targets/{target_id}", response_model=TargetResponse)
+@router.get(
+    "/targets/{target_id}",
+    response_model=TargetResponse,
+    summary="Get target by ID",
+    description="Get details of a specific target by its ID.",
+)
 def get_target(target_id: uuid.UUID) -> TargetResponse:
     row = fetch_target_by_id(target_id)
     if row is None:
