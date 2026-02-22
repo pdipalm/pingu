@@ -136,7 +136,7 @@ Notes:
 Returns the most recent result records globally across all targets.
 
 Query params:
-- limit (optional, integer): default 100, max 1000
+- limit (optional, integer): default 200, max 1000
 
 Response example:
 ```json
@@ -161,7 +161,7 @@ Returns results for a single target within a time range.
 Query params:
 - ```since``` (optional, string timestamp): default ```now-24h```
 - ```until``` (optional, string timestamp): default ```now```
-- ```limit``` (optional, integer): default 500, max 5000
+- ```limit``` (optional, integer): default 200, max 1000
 
 Response example:
 ```json

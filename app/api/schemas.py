@@ -29,3 +29,19 @@ class TargetOut(BaseModel):
     timeout_ms: int = Field(..., ge=1)
     host: str | None = None
     url: str | None = None
+
+
+class ProbeResultOut(BaseModel):
+    id: int
+    target_id: uuid.UUID
+    ts: datetime
+    success: bool
+    latency_ms: int | None = None
+    status_code: int | None = None
+    error: str | None = None
+
+
+class TargetResultsResponse(BaseModel):
+    target_id: uuid.UUID
+    target_name: str
+    items: list[ProbeResultOut]
