@@ -17,6 +17,15 @@ class HealthDbStats:
     last_result_ts: datetime | None
 
 
+def db_ok(s: Session | None = None) -> bool:
+    try:
+        with session_scope(existing=s) as db:
+            db.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
+
+
 def fetch_health_db_stats(s: Session | None = None) -> HealthDbStats:
     with session_scope(existing=s) as session:
         enabled_targets = timed_execute(

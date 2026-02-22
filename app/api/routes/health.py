@@ -6,8 +6,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter
 
 from app.api.schemas import HealthResponse, HealthStats, HealthThresholds
-from app.db import SessionLocal, db_ok
-from app.repos.health import fetch_health_db_stats
+from app.repos.health import db_ok, fetch_health_db_stats
 
 router = APIRouter()
 
@@ -37,24 +36,23 @@ def health() -> HealthResponse:
 
     now = datetime.now(timezone.utc)
 
-    with SessionLocal() as s:
-        db_stats = fetch_health_db_stats(s)
+    db_stats = fetch_health_db_stats()
 
-        enabled_targets = db_stats.enabled_targets
-        max_interval = db_stats.max_interval_seconds
-        last_ts = db_stats.last_result_ts
+    enabled_targets = db_stats.enabled_targets
+    max_interval = db_stats.max_interval_seconds
+    last_ts = db_stats.last_result_ts
 
-        seconds_since = None
-        if last_ts is not None:
-            last_ts = last_ts.astimezone(timezone.utc)
-            seconds_since = int((now - last_ts).total_seconds())
+    seconds_since = None
+    if last_ts is not None:
+        last_ts = last_ts.astimezone(timezone.utc)
+        seconds_since = int((now - last_ts).total_seconds())
 
-        stale_after_s = 0
-        if enabled_targets > 0 and max_interval > 0:
-            stale_after_s = max(
-                MIN_STALE_SECONDS,
-                int(math.ceil(max_interval * STALE_GRACE_MULT)),
-            )
+    stale_after_s = 0
+    if enabled_targets > 0 and max_interval > 0:
+        stale_after_s = max(
+            MIN_STALE_SECONDS,
+            int(math.ceil(max_interval * STALE_GRACE_MULT)),
+        )
 
     ok = True
     if enabled_targets > 0 and seconds_since is not None and seconds_since > stale_after_s:

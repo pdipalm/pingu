@@ -38,12 +38,3 @@ def session_scope(existing: Session | None = None):
         raise
     finally:
         s.close()
-
-
-def db_ok(*, s: Session | None = None) -> bool:
-    with session_scope(existing=s) as db:
-        try:
-            db.execute(text("SELECT 1"))
-            return True
-        except Exception:
-            return False
