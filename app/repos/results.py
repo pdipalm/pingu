@@ -2,7 +2,8 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import text
-from app.db import SessionLocal
+from sqlalchemy.orm import Session
+from app.db import session_scope
 
 def insert_probe_result(
     *,
@@ -12,9 +13,11 @@ def insert_probe_result(
     latency_ms: int | None,
     status_code: int | None,
     error: str | None,
+    s: Session | None = None,
 ) -> None:
-    with SessionLocal() as s:
-        s.execute(
+    owns_session = s is None
+    with session_scope(s) as session:
+        session.execute(
             text(
                 """
                 INSERT INTO probe_results (target_id, ts, success, latency_ms, status_code, error)
@@ -30,4 +33,5 @@ def insert_probe_result(
                 "error": error,
             },
         )
-        s.commit()
+        if owns_session:
+            session.commit()

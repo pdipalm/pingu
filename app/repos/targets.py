@@ -1,11 +1,12 @@
 
-from app.db import SessionLocal
+from sqlalchemy.orm import Session
+from app.db import session_scope
 from app.models import IcmpTarget, HttpTarget
 from sqlalchemy import text
 
-def fetch_enabled_icmp_targets() -> list[IcmpTarget]:
-    with SessionLocal() as s:
-        rows = s.execute(
+def fetch_enabled_icmp_targets(s: Session | None = None) -> list[IcmpTarget]:
+    with session_scope(s) as session:
+        rows = session.execute(
             text(
                 """
                 SELECT id, name, host, interval_seconds, timeout_ms
@@ -33,9 +34,9 @@ def fetch_enabled_icmp_targets() -> list[IcmpTarget]:
     return out
 
 
-def fetch_enabled_http_targets() -> list[HttpTarget]:
-    with SessionLocal() as s:
-        rows = s.execute(
+def fetch_enabled_http_targets(s: Session | None = None) -> list[HttpTarget]:
+    with session_scope(s) as session:
+        rows = session.execute(
             text(
                 """
                 SELECT id, name, url, interval_seconds, timeout_ms
