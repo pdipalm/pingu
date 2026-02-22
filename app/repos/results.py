@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.constants import DEFAULT_LIMIT, MAX_LIMIT
 from app.db import session_scope
+from app.repos.util import timed_execute
 
 
 def fetch_latest_results(
@@ -49,7 +50,11 @@ def fetch_latest_results(
     """
 
     with session_scope(s) as session:
-        rows = session.execute(text(sql), params).mappings().all()
+        rows = (
+            timed_execute(session, text(sql), params, label="fetch_latest_results")
+            .mappings()
+            .all()
+        )
 
     return [dict(r) for r in rows]
 
@@ -80,7 +85,14 @@ def fetch_latest_result_by_target(
         """
     with session_scope(s) as session:
         rows = (
-            session.execute(text(sql), {"enabled_only": enabled_only}).mappings().all()
+            timed_execute(
+                session,
+                text(sql),
+                {"enabled_only": enabled_only},
+                label="fetch_latest_result_by_target",
+            )
+            .mappings()
+            .all()
         )
 
     return [dict(r) for r in rows]
@@ -114,7 +126,11 @@ def fetch_results_for_target(
     """
 
     with session_scope(s) as session:
-        rows = session.execute(text(sql), params).mappings().all()
+        rows = (
+            timed_execute(session, text(sql), params, label="fetch_results_for_target")
+            .mappings()
+            .all()
+        )
 
     return [dict(r) for r in rows]
 
@@ -130,7 +146,8 @@ def insert_probe_result(
     s: Session | None = None,
 ) -> None:
     with session_scope(s) as session:
-        session.execute(
+        timed_execute(
+            session,
             text("""
                 INSERT INTO probe_results (target_id, ts, success, latency_ms, status_code, error)
                 VALUES (:target_id, :ts, :success, :latency_ms, :status_code, :error)
@@ -143,4 +160,5 @@ def insert_probe_result(
                 "status_code": status_code,
                 "error": error,
             },
+            label="insert_probe_result",
         )

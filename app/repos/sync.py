@@ -6,13 +6,19 @@ from sqlalchemy.orm import Session
 
 from app.db import session_scope
 from app.poller.config import TargetCfg
+from app.repos.util import timed_execute
 
 
 def sync_targets_to_db(cfg_targets: list[TargetCfg], s: Session | None = None) -> None:
     cfg_by_name = {t.name: t for t in cfg_targets}
 
     with session_scope(s) as session:
-        existing = session.execute(text("SELECT id, name FROM targets")).all()
+        existing = timed_execute(
+            session,
+            text("SELECT id, name FROM targets"),
+            None,
+            label="fetch_existing_targets",
+        ).all()
         existing_by_name: dict[str, uuid.UUID] = {row.name: row.id for row in existing}
 
         now = datetime.now(timezone.utc)
@@ -21,7 +27,8 @@ def sync_targets_to_db(cfg_targets: list[TargetCfg], s: Session | None = None) -
             existing_id = existing_by_name.get(name)
             if existing_id is None:
                 new_id = uuid.uuid4()
-                session.execute(
+                timed_execute(
+                    session,
                     text("""
                         INSERT INTO targets (id, name, type, host, url, interval_seconds, timeout_ms, enabled, created_at, updated_at)
                         VALUES (:id, :name, :type, :host, :url, :interval_seconds, :timeout_ms, :enabled, :created_at, :updated_at)
@@ -38,9 +45,11 @@ def sync_targets_to_db(cfg_targets: list[TargetCfg], s: Session | None = None) -
                         "created_at": now,
                         "updated_at": now,
                     },
+                    label="insert_target",
                 )
             else:
-                session.execute(
+                timed_execute(
+                    session,
                     text("""
                         UPDATE targets
                         SET type = :type,
@@ -62,16 +71,19 @@ def sync_targets_to_db(cfg_targets: list[TargetCfg], s: Session | None = None) -
                         "enabled": t.enabled,
                         "updated_at": now,
                     },
+                    label="update_target",
                 )
 
         cfg_names = set(cfg_by_name.keys())
         for row in existing:
             if row.name not in cfg_names:
-                session.execute(
+                timed_execute(
+                    session,
                     text("""
                         UPDATE targets
                         SET enabled = false, updated_at = :updated_at
                         WHERE id = :id
                     """),
                     {"id": row.id, "updated_at": now},
+                    label="disable_target",
                 )

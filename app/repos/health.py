@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db import session_scope
+from app.repos.util import timed_execute
 
 
 @dataclass(frozen=True)
@@ -18,19 +19,37 @@ class HealthDbStats:
 
 def fetch_health_db_stats(s: Session | None = None) -> HealthDbStats:
     with session_scope(s) as session:
-        enabled_targets = session.execute(
-            text("SELECT COUNT(*) FROM targets WHERE enabled = true")
+        enabled_targets = timed_execute(
+            session,
+            text("SELECT COUNT(*) FROM targets WHERE enabled = true"),
+            None,
+            label="fetch_enabled_targets_count",
         ).scalar_one()
 
-        max_interval_seconds = session.execute(
+        max_interval_seconds = timed_execute(
+            session,
             text(
                 "SELECT COALESCE(MAX(interval_seconds), 0) "
                 "FROM targets WHERE enabled = true"
-            )
+            ),
+            None,
+            label="fetch_max_interval_seconds",
+        ).scalar_one()
+        max_interval_seconds = timed_execute(
+            session,
+            text(
+                "SELECT COALESCE(MAX(interval_seconds), 0) "
+                "FROM targets WHERE enabled = true"
+            ),
+            None,
+            label="fetch_max_interval_seconds",
         ).scalar_one()
 
-        last_ts = session.execute(
-            text("SELECT MAX(ts) FROM probe_results")
+        last_ts = timed_execute(
+            session,
+            text("SELECT MAX(ts) FROM probe_results"),
+            None,
+            label="fetch_last_result_ts",
         ).scalar_one()
 
     return HealthDbStats(
