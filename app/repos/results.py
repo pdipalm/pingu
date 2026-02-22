@@ -129,13 +129,12 @@ def insert_probe_result(
     error: str | None,
     s: Session | None = None,
 ) -> None:
-    owns_session = s is None
     with session_scope(s) as session:
         session.execute(
             text("""
                 INSERT INTO probe_results (target_id, ts, success, latency_ms, status_code, error)
                 VALUES (:target_id, :ts, :success, :latency_ms, :status_code, :error)
-                """),
+            """),
             {
                 "target_id": target_id,
                 "ts": ts,
@@ -145,5 +144,3 @@ def insert_probe_result(
                 "error": error,
             },
         )
-        if owns_session:
-            session.commit()

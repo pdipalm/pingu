@@ -8,8 +8,6 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
 
-# Create one Engine per process. This is fine for your api + poller containers.
-# NOTE: Your DATABASE_URL is using SQLAlchemy URL style: postgresql+psycopg://...
 engine: Engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,  # avoids stale connections
@@ -20,6 +18,13 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 @contextmanager
 def session_scope(existing: Session | None = None):
+    """
+    Yields a Session.
+
+    - If `existing` is provided, participates in the caller's transaction and does not
+      commit/rollback/close.
+    - If `existing` is None, opens a new session and manages commit/rollback/close.
+    """
     if existing is not None:
         yield existing
         return
@@ -27,6 +32,10 @@ def session_scope(existing: Session | None = None):
     s = SessionLocal()
     try:
         yield s
+        s.commit()
+    except Exception:
+        s.rollback()
+        raise
     finally:
         s.close()
 
