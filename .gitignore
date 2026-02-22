@@ -1,4 +1,6 @@
 .venv
 .env
 .mypy_cache
+__pycache__
 targets.yaml
+*.egg-info

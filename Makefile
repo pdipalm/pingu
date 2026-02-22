@@ -64,6 +64,11 @@ lint:
 	isort . --check-only --diff
 	black . --check
 	mypy .
+	@if ! command -v rg >/dev/null; then \
+		echo "ripgrep (rg) is not installed. Please install it to run lint checks."; \
+		exit 1; \
+	fi
+	@! rg -n "from app\.db import engine|engine\.connect|SessionLocal\(" app/repos || (echo "Repo must not use engine/SessionLocal directly" && exit 1)
 
 fix:
 	isort .
@@ -75,6 +80,18 @@ typecheck:
 .PHONY: ps
 ps:
 	$(COMPOSE) ps
+
+.PHONY: test
+test:
+	$(COMPOSE) build --no-cache --build-arg INSTALL_DEV=true api --build-arg INCLUDE_TESTS=true
+	$(COMPOSE) up -d db
+	$(COMPOSE) exec -T db bash -lc "until pg_isready -U $$POSTGRES_USER; do sleep 0.2; done"
+	$(COMPOSE) exec -T db psql -U $$POSTGRES_USER -tc "SELECT 1 FROM pg_database WHERE datname='$$TEST_DB_NAME'" | grep -q 1 || \
+		$(COMPOSE) exec -T db psql -U $$POSTGRES_USER -c "CREATE DATABASE $$TEST_DB_NAME;"
+	$(COMPOSE) run --rm \
+		-e TEST_DATABASE_URL=postgresql+psycopg://$$POSTGRES_USER:$$POSTGRES_PASSWORD@db:5432/$$TEST_DB_NAME \
+		api bash -lc "pytest -q"
+	$(COMPOSE) down
 
 .PHONY: logs
 logs:
