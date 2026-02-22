@@ -12,9 +12,7 @@ async def http_probe_once(
     timeout_s = timeout_ms / 1000.0
 
     try:
-        async with httpx.AsyncClient(
-            timeout=timeout_s, follow_redirects=True
-        ) as client:
+        async with httpx.AsyncClient(timeout=timeout_s, follow_redirects=True) as client:
             start = time.perf_counter()
             resp = await client.get(url)
             elapsed_ms = int((time.perf_counter() - start) * 1000)

@@ -5,9 +5,7 @@ import time
 PING_TIME_RE = re.compile(r"time[=<]([\d.]+)\s*ms")
 
 
-async def icmp_ping_once(
-    host: str, timeout_ms: int
-) -> tuple[bool, int | None, str | None]:
+async def icmp_ping_once(host: str, timeout_ms: int) -> tuple[bool, int | None, str | None]:
     """
     Returns (success, latency_ms, error).
     Uses system ping. Requires iputils-ping + CAP_NET_RAW in container.

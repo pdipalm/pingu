@@ -59,9 +59,7 @@ async def poll_icmp_forever(t: IcmpTarget) -> None:
                 error=error,
             )
         except Exception as e:
-            logging.exception(
-                f"unexpected error during ICMP poll for target {t.name}: {e}"
-            )
+            logging.exception(f"unexpected error during ICMP poll for target {t.name}: {e}")
         await asyncio.sleep(t.interval_seconds)
 
 
@@ -115,9 +113,7 @@ async def poll_http_forever(t: HttpTarget) -> None:
                 error=error,
             )
         except Exception as e:
-            logging.exception(
-                f"unexpected error during HTTP poll for target {t.name}: {e}"
-            )
+            logging.exception(f"unexpected error during HTTP poll for target {t.name}: {e}")
         await asyncio.sleep(t.interval_seconds)
 
 

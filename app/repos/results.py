@@ -51,9 +51,7 @@ def fetch_latest_results(
 
     with session_scope(s) as session:
         rows = (
-            timed_execute(session, text(sql), params, label="fetch_latest_results")
-            .mappings()
-            .all()
+            timed_execute(session, text(sql), params, label="fetch_latest_results").mappings().all()
         )
 
     return [dict(r) for r in rows]

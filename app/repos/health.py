@@ -28,19 +28,13 @@ def fetch_health_db_stats(s: Session | None = None) -> HealthDbStats:
 
         max_interval_seconds = timed_execute(
             session,
-            text(
-                "SELECT COALESCE(MAX(interval_seconds), 0) "
-                "FROM targets WHERE enabled = true"
-            ),
+            text("SELECT COALESCE(MAX(interval_seconds), 0) " "FROM targets WHERE enabled = true"),
             None,
             label="fetch_max_interval_seconds",
         ).scalar_one()
         max_interval_seconds = timed_execute(
             session,
-            text(
-                "SELECT COALESCE(MAX(interval_seconds), 0) "
-                "FROM targets WHERE enabled = true"
-            ),
+            text("SELECT COALESCE(MAX(interval_seconds), 0) " "FROM targets WHERE enabled = true"),
             None,
             label="fetch_max_interval_seconds",
         ).scalar_one()

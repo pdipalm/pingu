@@ -33,11 +33,7 @@ def fetch_all_targets(
     """
 
     with session_scope(s) as session:
-        rows = (
-            timed_execute(session, text(sql), params, label="fetch_all_targets")
-            .mappings()
-            .all()
-        )
+        rows = timed_execute(session, text(sql), params, label="fetch_all_targets").mappings().all()
 
     return [dict(r) for r in rows]
 

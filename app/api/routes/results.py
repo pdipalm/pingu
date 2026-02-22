@@ -39,6 +39,4 @@ def get_latest_result(
 )
 def get_latest_result_by_target() -> LatestResultByTargetResponse:
     rows = fetch_latest_result_by_target()
-    return LatestResultByTargetResponse(
-        items=[LatestResultByTargetItem(**r) for r in rows]
-    )
+    return LatestResultByTargetResponse(items=[LatestResultByTargetItem(**r) for r in rows])
