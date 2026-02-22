@@ -1,0 +1,18 @@
+{
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": ".*\\.py$",
+                "cmd": "./.venv/bin/isort ${file}"
+            },
+            {
+                "match": ".*\\.py$",
+                "cmd": "./.venv/bin/black ${file}"
+            },
+            {
+                "match": ".*\\.py$",
+                "cmd": "./.venv/bin/mypy ${file}"
+            }
+        ]
+    }
+}
