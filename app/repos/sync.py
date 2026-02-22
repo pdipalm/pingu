@@ -5,6 +5,7 @@ from app.poller.config import TargetCfg
 from datetime import datetime, timezone
 from sqlalchemy import text
 
+
 def sync_targets_to_db(cfg_targets: list[TargetCfg]) -> None:
     cfg_by_name = {t.name: t for t in cfg_targets}
 
@@ -18,12 +19,10 @@ def sync_targets_to_db(cfg_targets: list[TargetCfg]) -> None:
             if existing_id is None:
                 new_id = uuid.uuid4()
                 s.execute(
-                    text(
-                        """
+                    text("""
                         INSERT INTO targets (id, name, type, host, url, interval_seconds, timeout_ms, enabled, created_at, updated_at)
                         VALUES (:id, :name, :type, :host, :url, :interval_seconds, :timeout_ms, :enabled, :created_at, :updated_at)
-                        """
-                    ),
+                        """),
                     {
                         "id": new_id,
                         "name": t.name,
@@ -39,8 +38,7 @@ def sync_targets_to_db(cfg_targets: list[TargetCfg]) -> None:
                 )
             else:
                 s.execute(
-                    text(
-                        """
+                    text("""
                         UPDATE targets
                         SET type = :type,
                             host = :host,
@@ -50,8 +48,7 @@ def sync_targets_to_db(cfg_targets: list[TargetCfg]) -> None:
                             enabled = :enabled,
                             updated_at = :updated_at
                         WHERE id = :id
-                        """
-                    ),
+                        """),
                     {
                         "id": existing_id,
                         "type": t.type,
@@ -68,7 +65,9 @@ def sync_targets_to_db(cfg_targets: list[TargetCfg]) -> None:
         for row in existing:
             if row.name not in cfg_names:
                 s.execute(
-                    text("UPDATE targets SET enabled = false, updated_at = :updated_at WHERE id = :id"),
+                    text(
+                        "UPDATE targets SET enabled = false, updated_at = :updated_at WHERE id = :id"
+                    ),
                     {"id": row.id, "updated_at": datetime.now(timezone.utc)},
                 )
 

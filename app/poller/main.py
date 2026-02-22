@@ -9,8 +9,11 @@ from app.repos.sync import sync_targets_to_db
 from app.poller.icmp import icmp_ping_once
 from app.poller.http import http_probe_once
 
+
 async def poll_icmp_forever(t: IcmpTarget) -> None:
-    print(f"[poller] starting ICMP poll loop for {t.name} ({t.host}) every {t.interval_seconds}s")
+    print(
+        f"[poller] starting ICMP poll loop for {t.name} ({t.host}) every {t.interval_seconds}s"
+    )
 
     while True:
         ts = datetime.now(timezone.utc)
@@ -25,8 +28,11 @@ async def poll_icmp_forever(t: IcmpTarget) -> None:
         )
         await asyncio.sleep(t.interval_seconds)
 
+
 async def poll_http_forever(t: HttpTarget) -> None:
-    print(f"[poller] starting HTTP poll loop for {t.name} ({t.url}) every {t.interval_seconds}s")
+    print(
+        f"[poller] starting HTTP poll loop for {t.name} ({t.url}) every {t.interval_seconds}s"
+    )
 
     while True:
         ts = datetime.now(timezone.utc)

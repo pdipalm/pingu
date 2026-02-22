@@ -52,7 +52,11 @@ def health() -> HealthResponse:
             )
 
     ok = True
-    if enabled_targets > 0 and seconds_since is not None and seconds_since > stale_after_s:
+    if (
+        enabled_targets > 0
+        and seconds_since is not None
+        and seconds_since > stale_after_s
+    ):
         ok = False
 
     return HealthResponse(

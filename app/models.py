@@ -18,4 +18,3 @@ class HttpTarget:
     url: str
     interval_seconds: int
     timeout_ms: int
-

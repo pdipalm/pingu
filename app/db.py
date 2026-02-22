@@ -17,6 +17,7 @@ engine: Engine = create_engine(
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
+
 @contextmanager
 def session_scope(existing: Session | None = None):
     if existing is not None:

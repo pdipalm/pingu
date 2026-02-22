@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from pydantic import BaseModel, Field
 
@@ -17,3 +18,14 @@ class HealthResponse(BaseModel):
     db: bool
     thresholds: HealthThresholds
     stats: HealthStats
+
+
+class TargetOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    type: str
+    enabled: bool
+    interval_seconds: int = Field(..., ge=1)
+    timeout_ms: int = Field(..., ge=1)
+    host: str | None = None
+    url: str | None = None

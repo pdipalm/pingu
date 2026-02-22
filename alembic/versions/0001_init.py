@@ -7,8 +7,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE IF NOT EXISTS targets (
             id UUID PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
@@ -26,11 +25,9 @@ def upgrade() -> None:
               (type = 'http' AND url IS NOT NULL AND host IS NULL)
             )
         );
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE IF NOT EXISTS probe_results (
             id BIGSERIAL PRIMARY KEY,
             target_id UUID NOT NULL REFERENCES targets(id),
@@ -40,22 +37,17 @@ def upgrade() -> None:
             status_code INT NULL,
             error TEXT NULL
         );
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE INDEX IF NOT EXISTS idx_probe_results_target_ts_desc
         ON probe_results (target_id, ts DESC);
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE INDEX IF NOT EXISTS idx_probe_results_ts_desc
         ON probe_results (ts DESC);
-        """
-    )
+        """)
 
 
 def downgrade() -> None:

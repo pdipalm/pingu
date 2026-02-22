@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import yaml
 
+
 @dataclass(frozen=True)
 class TargetCfg:
     name: str
