@@ -9,4 +9,4 @@ class Settings(BaseSettings):
     log_level: str = "info"
 
 
-settings = Settings()
+settings = Settings()  # type: ignore
