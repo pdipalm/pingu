@@ -1,8 +1,10 @@
 import uuid
-from sqlalchemy.orm import Session
-from app.db import session_scope
-from app.models import IcmpTarget, HttpTarget
+
 from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.db import session_scope
+from app.models import HttpTarget, IcmpTarget
 
 
 def fetch_all_targets(
@@ -59,6 +61,7 @@ def fetch_enabled_icmp_targets(s: Session | None = None) -> list[IcmpTarget]:
                 SELECT id, name, host, interval_seconds, timeout_ms
                 FROM targets
                 WHERE enabled = true AND type = 'icmp'
+                ORDER BY name
                 """)).mappings().all()
 
     out: list[IcmpTarget] = []
@@ -85,6 +88,7 @@ def fetch_enabled_http_targets(s: Session | None = None) -> list[HttpTarget]:
                 SELECT id, name, url, interval_seconds, timeout_ms
                 FROM targets
                 WHERE enabled = true AND type = 'http'
+                ORDER BY name
                 """)).mappings().all()
 
     out: list[HttpTarget] = []

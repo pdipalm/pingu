@@ -1,6 +1,8 @@
 import uuid
 from typing import Literal
+
 from fastapi import APIRouter, HTTPException, Query
+
 from app.api.schemas import TargetListResponse, TargetResponse
 from app.repos.targets import fetch_all_targets, fetch_target_by_id
 

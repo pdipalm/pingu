@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
-from contextlib import contextmanager
-from sqlalchemy.orm import Session
 
 # Create one Engine per process. This is fine for your api + poller containers.
 # NOTE: Your DATABASE_URL is using SQLAlchemy URL style: postgresql+psycopg://...

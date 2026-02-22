@@ -1,5 +1,6 @@
-import httpx
 import time
+
+import httpx
 
 
 async def http_probe_once(

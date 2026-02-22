@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter
 
-from app.db import SessionLocal, db_ok
 from app.api.schemas import HealthResponse, HealthStats, HealthThresholds
+from app.db import SessionLocal, db_ok
 from app.repos.health import fetch_health_db_stats
 
 router = APIRouter()
