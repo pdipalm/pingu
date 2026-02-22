@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import uuid
-from datetime import datetime
-
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 from app.api.schemas import (
     LatestResultByTargetItem,
