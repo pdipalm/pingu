@@ -31,7 +31,7 @@ help:
 	@printf "  dbshell      psql into db as postgres\n"
 	@printf "  dbshell-app  psql into db as app user\n"
 	@printf "  dbwatch      Watch latest probe results\n"
-	@printf "  bootstrap    Run bootstrap once\n"
+	@printf "  bootstrap    Run bootstrap script once\n"
 	@printf "\n"
 	@printf "  format       Run isort and black formatting\n"
 	@printf "  lint         Run isort, black, and mypy checks\n"
