@@ -33,24 +33,6 @@ def apply_migrations() -> Iterator[None]:
     yield
 
 
-# from sqlalchemy import text
-# import pytest
-
-
-# @pytest.fixture(scope="session", autouse=True)
-# def reset_test_db(engine, apply_migrations) -> Iterator[None]:
-#     """
-#     Ensure test DB starts empty for each pytest session.
-#     """
-#     with engine.begin() as conn:
-#         db_name = conn.execute(text("select current_database()")).scalar_one()
-#         assert "test" in db_name, f"Refusing to wipe non-test database: {db_name}"
-
-#         conn.execute(text("TRUNCATE TABLE probe_results RESTART IDENTITY CASCADE;"))
-#         conn.execute(text("TRUNCATE TABLE targets RESTART IDENTITY CASCADE;"))
-#     yield
-
-
 @pytest.fixture()
 def db_session(engine, monkeypatch) -> Iterator[Session]:
     """
