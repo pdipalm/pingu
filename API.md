@@ -1,4 +1,4 @@
-# Pingu API v0.1 draft
+# Pingu API v0.1
 
 ## Conventions
 
