@@ -272,6 +272,6 @@ eff832/results?limit=3 | jq
 - Repos: `app.repos` (DB access helpers and syncing)
 
 ## Future Work:
-- Poller: jitter, backoff, concurrency limits, target caching, ipv6 support
+- Poller: concurrency limits, target caching, ipv6 support
 - API: /summary endpoint
 - DB: chron/scheduler to remove old records
