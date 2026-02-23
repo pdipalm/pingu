@@ -20,10 +20,11 @@ DB_APP_USER ?= pingu_app
 .PHONY: help
 help:
 	@printf "\nTargets:\n"
+	@printf "  doctor       Check external dependencies (python, docker, compose, rg)\n"
 	@printf "  up           Start services\n"
 	@printf "  down         Stop services\n"
-	@printf "  rebuild      Rebuild and restart services\n"
-	@printf "  full-rebuild Removes volumes, then rebuilds and restarts services\n"
+	@printf "  up-build     Rebuild and restart services\n"
+	@printf "  full-rebuild Remove volumes, then rebuild and restart services\n"
 	@printf "  ps           Show containers\n"
 	@printf "  logs         Tail logs (all)\n"
 	@printf "  api-logs     Tail api logs\n"
@@ -31,12 +32,24 @@ help:
 	@printf "  dbshell      psql into db as postgres\n"
 	@printf "  dbshell-app  psql into db as app user\n"
 	@printf "  dbwatch      Watch latest probe results\n"
-	@printf "  bootstrap    Run bootstrap script once\n"
 	@printf "\n"
-	@printf "  format       Run isort and black formatting\n"
-	@printf "  lint         Run isort, black, and mypy checks\n"
-	@printf "  fix          Auto-fix formatting issues\n"
-	@printf "  typecheck    Run mypy type checks\n"
+	@printf "  fmt          Auto-format code (isort + black)\n"
+	@printf "  lint         Lint/check (isort --check + black --check + mypy + repo rules)\n"
+	@printf "  typecheck    Run mypy\n"
+	@printf "  test         Run tests in docker\n"
+	@printf "  ci           Run lint + test (non-mutating)\n\n"
+
+# ---- Meta / sanity checks ----
+
+.PHONY: doctor
+doctor:
+	@command -v python3 >/dev/null || (echo "missing python3" && exit 1)
+	@command -v docker >/dev/null || (echo "missing docker" && exit 1)
+	@$(COMPOSE) version >/dev/null 2>&1 || (echo "missing docker compose plugin (try: docker compose version)" && exit 1)
+	@command -v rg >/dev/null || (echo "missing ripgrep (rg). Install ripgrep to run lint checks." && exit 1)
+	@echo "ok"
+
+# ---- Docker lifecycle ----
 
 .PHONY: up
 up:
@@ -46,8 +59,8 @@ up:
 down:
 	$(COMPOSE) down
 
-.PHONY: rebuild
-rebuild:
+.PHONY: up-build
+up-build:
 	$(COMPOSE) up -d --build
 
 .PHONY: full-rebuild
@@ -55,8 +68,14 @@ full-rebuild:
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --build
 
-.PHONY: format lint fix typecheck
-format:
+.PHONY: ps
+ps:
+	$(COMPOSE) ps
+
+# ---- Code quality ----
+
+.PHONY: fmt lint typecheck
+fmt:
 	isort .
 	black .
 
@@ -64,22 +83,13 @@ lint:
 	isort . --check-only --diff
 	black . --check
 	mypy .
-	@if ! command -v rg >/dev/null; then \
-		echo "ripgrep (rg) is not installed. Please install it to run lint checks."; \
-		exit 1; \
-	fi
-	@! rg -n "from app\.db import engine|engine\.connect|SessionLocal\(" app/repos || (echo "Repo must not use engine/SessionLocal directly" && exit 1)
-
-fix:
-	isort .
-	black .
+	@! rg -n "from app\.db import engine|engine\.connect|SessionLocal\(" app/repos \
+		|| (echo "Repo must not use engine/SessionLocal directly" && exit 1)
 
 typecheck:
 	mypy .
 
-.PHONY: ps
-ps:
-	$(COMPOSE) ps
+# ---- Tests (docker) ----
 
 .PHONY: test
 test:
@@ -93,8 +103,10 @@ test:
 		api bash -lc "pytest -q"
 	$(COMPOSE) down
 
-/PHONY: ci
-make ci: format lint test
+.PHONY: ci
+ci: lint test
+
+# ---- Logs / DB helpers ----
 
 .PHONY: logs
 logs:
@@ -107,10 +119,6 @@ api-logs:
 .PHONY: poller-logs
 poller-logs:
 	$(COMPOSE) logs -f --tail=200 poller
-
-.PHONY: bootstrap
-bootstrap:
-	$(COMPOSE) run --rm bootstrap
 
 .PHONY: dbshell
 dbshell:
