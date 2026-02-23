@@ -24,9 +24,9 @@ Running the services directly on the host (API/poller + local DB) is currently u
 - For ICMP probes: system `ping` (iputils-ping) and appropriate privileges (handled in the Docker image)
 
 ## Configuration
-- Environment: `.env`. See `example.env`
-- Targets file: `targets.yaml`.
-- DB URL: set `DATABASE_URL` (used by app) and `TEST_DATABASE_URL` for tests.
+- Environment: `.env`. See `example.env`. Copy example.env to .env and configure the required environment variables before running the application.
+- Targets file: `targets.yaml`. Define your polling targets in this file before starting the poller. See `targets.example.yaml`.
+- DB URL (optional): You may set `DATABASE_URL` (used by the application) and `TEST_DATABASE_URL` (used for tests). This is optional and not recommended when running via Docker Compose, as the database connection is already configured in `docker-compose.yaml`.
 
 ## Running (Docker)
 Build and start API + DB (and any other services) using Docker Compose:
