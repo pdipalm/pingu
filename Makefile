@@ -93,6 +93,9 @@ test:
 		api bash -lc "pytest -q"
 	$(COMPOSE) down
 
+/PHONY: ci
+make ci: format lint test
+
 .PHONY: logs
 logs:
 	$(COMPOSE) logs -f --tail=200
