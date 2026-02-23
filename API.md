@@ -25,6 +25,8 @@ Common fields across all probe types:
 - `latency_ms` (integer, nullable): total round-trip time in milliseconds
 - `status_code` (integer, nullable): HTTP status code for HTTP probes
 - `error` (string, nullable): error message if the probe failed
+- `id` (integer): internal database id for the probe result record (present on stored result objects)
+- `target_id` (UUID): identifier of the target the probe ran against (often included in list responses)
 
 Success criteria:
 - ICMP: success if at least one echo reply is received within timeout
@@ -43,6 +45,7 @@ Returns basic service status. Poller health is inferred from the most recent sto
 
 ```json
 {
+  "generated_at": "2026-02-22T03:10:58.123456Z",
   "ok": true,
   "db": true,
   "thresholds": {
@@ -70,6 +73,8 @@ Returns basic service status. Poller health is inferred from the most recent sto
 
 - `thresholds.stale_after_seconds` (integer)  
   Maximum allowed age in seconds of the most recent result before the service is considered stale.
+- `generated_at` (string)  
+  ISO 8601 UTC timestamp with `Z` suffix indicating when the response was produced.
 
 - `stats.enabled_targets` (integer)  
   Count of currently enabled targets.
@@ -90,6 +95,9 @@ Returns basic service status. Poller health is inferred from the most recent sto
   - A recent result exists, and
   - `seconds_since_last_result <= stale_after_seconds`.
 
+Notes on computation:
+- `stale_after_seconds` is computed by the service as the greater of 30 seconds and `ceil(max_interval_seconds * 1.5)` when there are enabled targets; otherwise it is 0. `max_interval_seconds` is derived from the `interval_seconds` of enabled targets.
+
 ## Targets
 ### GET ```/targets```
 Lists all targets.
@@ -109,6 +117,7 @@ Query params:
 Response example:
 ```json
 {
+  "generated_at": "2026-02-22T03:11:00.000000Z",
   "items": [
     {
       "id": "b5c59b0e-7e88-4e9f-8f3d-3c2c9d8c1b0b",
@@ -175,6 +184,11 @@ Returns the most recent result records globally across all targets.
 Query params:
 - limit (optional, integer): default 200, max 1000
 
+- `since` (optional, string timestamp): inclusive lower bound for `ts` (RFC3339). If omitted no lower bound is applied.
+- `until` (optional, string timestamp): exclusive upper bound for `ts` (RFC3339). If omitted no upper bound is applied.
+
+Note: the implementation supports `since` and `until` datetime query parameters in addition to `limit`.
+
 Response example:
 ```json
 {
@@ -199,12 +213,13 @@ Query params:
 - ```since``` (optional, string timestamp): default ```now-24h```
 - ```until``` (optional, string timestamp): default ```now```
 - ```limit``` (optional, integer): default 200, max 1000
-
+Note: the running API accepts `since` and `until` as optional datetime query parameters but does not apply a server-side default of `now-24h`/`now`; if omitted the query is unbounded on that side (results are limited only by `limit`).
 Response example:
 ```json
 {
   "target_id": "b5c59b0e-7e88-4e9f-8f3d-3c2c9d8c1b0b",
   "target_name": "router",
+  "generated_at": "2026-02-22T03:11:05.000000Z",
   "items": [
     {
       "ts": "2026-02-20T16:42:00Z",
@@ -217,7 +232,7 @@ Response example:
 }
 ```
 
-## Summary
+## Summary (TODO)
 
 ### GET ```/summary```
 Returns per enabled target uptime percent and average latency for a window.
