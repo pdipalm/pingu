@@ -1,180 +1,277 @@
 # Pingu
 
-Lightweight probe collector and API for ICMP/HTTP targets.
+Lightweight probe/polling service (ICMP + HTTP) with an HTTP API and Postgres storage.
 
-## Quick summary
-- Poller loads YAML targets, syncs to DB, runs probes, and persists results.
-- HTTP API exposes health, targets, and results.
+## Quick links
+- App entry points: `app.poller.__main__.main`, `app.api.api.app`
+- Config & DB helpers: `app.config.Settings`, `app.db.session_scope`
+- Poller config loader: `app.poller.config.TargetCfg`
+- ICMP probe implementation: `app.poller.icmp.icmp_ping_once`
+- Migrations: `alembic/` (initial schema in `alembic/versions/0001_init.py`)
+- Dev infra: `Dockerfile`, `docker-compose.yml`, `Makefile`
+- Tests: `tests/` (fixtures in `tests/conftest.py`)
+- Docs: `API.md`, `poller.md`
 
-## Getting started
+## Overview
+Pingu loads targets from a YAML file, syncs them to the DB, and runs per-target probes (ICMP/HTTP) in asyncio tasks. Probe results are stored in Postgres and exposed via the API.
 
-Prereqs: Python 3.12, PostgreSQL, Docker (optional).
+## Important note — docker only
+Running the services directly on the host (API/poller + local DB) is currently unreliable in a local-only setup. For reliable runs and tests, use the provided Docker configuration. See "Running (recommended)" below.
 
-Run locally:
-```bash
-# create virtualenv, install
-pip install -e .
-# configure DB via .env or env vars (see app.config)
-export DATABASE_URL=postgresql+psycopg://...
-python -m app.poller    # runs poller (sync + probe loops)
-uvicorn app.api:app --reload  # run API
-```
-
-Docker:
-- See [Dockerfile](Dockerfile) and [docker-compose.yml](docker-compose.yml).
-- Makefile tasks: `make up`, `make test`, `make api-logs`. See [Makefile](Makefile).
-
-## Project layout
-- API: [app/api/api.py](app/api/api.py) exposes FastAPI app [`app.api.api.app`](app/api/api.py)
-  - Routes:
-    - Targets: [app/api/routes/targets.py](app/api/routes/targets.py)
-    - Results: [app/api/routes/results.py](app/api/routes/results.py)
-    - Target-specific results: [app/api/routes/target_results.py](app/api/routes/target_results.py)
-    - Health: [app/api/routes/health.py](app/api/routes/health.py)
-- Poller: [app/poller/__main__.py](app/poller/__main__.py) (entrypoint: [`app.poller.__main__.main`](app/poller/__main__.py))
-  - Loads YAML via [`app.poller.config.load_targets`](app/poller/config.py)
-  - Syncs via [`app.repos.sync.sync_targets_to_db`](app/repos/sync.py)
-  - Probes use [`app.repos.results.insert_probe_result`](app/repos/results.py)
-- Repos / DB helpers:
-  - Targets: [app/repos/targets.py](app/repos/targets.py) (`app.repos.targets.fetch_all_targets`)
-  - Results: [app/repos/results.py](app/repos/results.py) (`app.repos.results.fetch_results_for_target`)
-  - DB session helper: [`app.db.session_scope`](app/db.py)
-- Config / models:
-  - Settings: [`app.config.settings`](app/config.py)
-  - Target dataclasses: [app/models.py](app/models.py) (`app.models.IcmpTarget`, `app.models.HttpTarget`)
-- Migrations: [alembic/](alembic/) (initial: [alembic/versions/0001_init.py](alembic/versions/0001_init.py))
-- Tests: [tests/](tests/) (fixtures in [tests/conftest.py](tests/conftest.py), helpers in [tests/db_helpers.py](tests/db_helpers.py))
+## Requirements
+- Python 3.11+ (for development)
+- Postgres (handled in the Docker image)
+- For ICMP probes: system `ping` (iputils-ping) and appropriate privileges (handled in the Docker image)
 
 ## Configuration
-- Targets YAML: [targets.yaml](targets.yaml). Format parsed by [`app.poller.config.load_targets`](app/poller/config.py).
-- App settings: [app/config.py](app/config.py) (`DATABASE_URL`, `targets_path`, `log_level`) read from `.env`.
+- Environment: `.env`. See `example.env`
+- Targets file: `targets.yaml`.
+- DB URL: set `DATABASE_URL` (used by app) and `TEST_DATABASE_URL` for tests.
 
-## API overview
-- GET /health — health check (see [app/api/routes/health.py](app/api/routes/health.py))
-- GET /targets — list targets (see [app/api/routes/targets.py](app/api/routes/targets.py))
-- GET /targets/{target_id} — target details
-- GET /results/latest — recent results (see [app/api/routes/results.py](app/api/routes/results.py))
-- GET /results/latest-by-target — latest per-target
-- GET /targets/{target_id}/results — results for a specific target (see [app/api/routes/target_results.py](app/api/routes/target_results.py))
+## Running (Docker)
+Build and start API + DB (and any other services) using Docker Compose:
 
-API shapes are defined in [app/api/schemas.py](app/api/schemas.py).
-
-## Database & migrations
-- DB session helper: [`app.db.session_scope`](app/db.py)
-- Migrations: Alembic config [alembic.ini](alembic.ini) and versions in [alembic/versions/](alembic/versions/). Initial schema at [alembic/versions/0001_init.py](alembic/versions/0001_init.py).
-
-## Testing
-- Tests live in [tests/](tests/). Use pytest:
-```bash
-pytest -q
-```
-- CI and test container orchestration available via `Makefile` (see [Makefile](Makefile)).
-
-## Development notes
-- Poller stores probe rows via [`app.repos.results.insert_probe_result`](app/repos/results.py).
-- Query helpers for results/health are in [app/repos/results.py](app/repos/results.py) and [app/repos/health.py](app/repos/health.py).
-- Use [`app.repos.sync.sync_targets_to_db`](app/repos/sync.py) to keep DB in sync with YAML.
-
-## Contributing
-- Follow formatting/lint rules in `Makefile` (`make fmt`, `make lint`, `make typecheck`).
-- Tests must pass (`make test`).
-
-## Useful links
-- App entry: [app/api/api.py](app/api/api.py)
-- Poller entry: [app/poller/__main__.py](app/poller/__main__.py)
-- Config: [app/config.py](app/config.py)
-- DB helpers: [app/db.py](app/db.py)
-- Repos: [app/repos/results.py](app/repos/results.py), [app/repos/targets.py](app/repos/targets.py), [app/repos/sync.py](app/repos/sync.py)
-- Tests: [tests/](tests/)
-
-License: see repository root (not specified).// filepath: README.md
-# Pingu
-
-Lightweight probe collector and API for ICMP/HTTP targets.
-
-## Quick summary
-- Poller loads YAML targets, syncs to DB, runs probes, and persists results.
-- HTTP API exposes health, targets, and results.
-
-## Getting started
-
-Prereqs: Python 3.12, PostgreSQL, Docker (optional).
-
-Run locally:
-```bash
-# create virtualenv, install
-pip install -e .
-# configure DB via .env or env vars (see app.config)
-export DATABASE_URL=postgresql+psycopg://...
-python -m app.poller    # runs poller (sync + probe loops)
-uvicorn app.api:app --reload  # run API
+```sh
+docker compose up -d --build
 ```
 
-Docker:
-- See [Dockerfile](Dockerfile) and [docker-compose.yml](docker-compose.yml).
-- Makefile tasks: `make up`, `make test`, `make api-logs`. See [Makefile](Makefile).
+Run everything (API + poller + DB) in Docker (example Makefile targets exist):
 
-## Project layout
-- API: [app/api/api.py](app/api/api.py) exposes FastAPI app [`app.api.api.app`](app/api/api.py)
-  - Routes:
-    - Targets: [app/api/routes/targets.py](app/api/routes/targets.py)
-    - Results: [app/api/routes/results.py](app/api/routes/results.py)
-    - Target-specific results: [app/api/routes/target_results.py](app/api/routes/target_results.py)
-    - Health: [app/api/routes/health.py](app/api/routes/health.py)
-- Poller: [app/poller/__main__.py](app/poller/__main__.py) (entrypoint: [`app.poller.__main__.main`](app/poller/__main__.py))
-  - Loads YAML via [`app.poller.config.load_targets`](app/poller/config.py)
-  - Syncs via [`app.repos.sync.sync_targets_to_db`](app/repos/sync.py)
-  - Probes use [`app.repos.results.insert_probe_result`](app/repos/results.py)
-- Repos / DB helpers:
-  - Targets: [app/repos/targets.py](app/repos/targets.py) (`app.repos.targets.fetch_all_targets`)
-  - Results: [app/repos/results.py](app/repos/results.py) (`app.repos.results.fetch_results_for_target`)
-  - DB session helper: [`app.db.session_scope`](app/db.py)
-- Config / models:
-  - Settings: [`app.config.settings`](app/config.py)
-  - Target dataclasses: [app/models.py](app/models.py) (`app.models.IcmpTarget`, `app.models.HttpTarget`)
-- Migrations: [alembic/](alembic/) (initial: [alembic/versions/0001_init.py](alembic/versions/0001_init.py))
-- Tests: [tests/](tests/) (fixtures in [tests/conftest.py](tests/conftest.py), helpers in [tests/db_helpers.py](tests/db_helpers.py))
-
-## Configuration
-- Targets YAML: [targets.yaml](targets.yaml). Format parsed by [`app.poller.config.load_targets`](app/poller/config.py).
-- App settings: [app/config.py](app/config.py) (`DATABASE_URL`, `targets_path`, `log_level`) read from `.env`.
-
-## API overview
-- GET /health — health check (see [app/api/routes/health.py](app/api/routes/health.py))
-- GET /targets — list targets (see [app/api/routes/targets.py](app/api/routes/targets.py))
-- GET /targets/{target_id} — target details
-- GET /results/latest — recent results (see [app/api/routes/results.py](app/api/routes/results.py))
-- GET /results/latest-by-target — latest per-target
-- GET /targets/{target_id}/results — results for a specific target (see [app/api/routes/target_results.py](app/api/routes/target_results.py))
-
-API shapes are defined in [app/api/schemas.py](app/api/schemas.py).
-
-## Database & migrations
-- DB session helper: [`app.db.session_scope`](app/db.py)
-- Migrations: Alembic config [alembic.ini](alembic.ini) and versions in [alembic/versions/](alembic/versions/). Initial schema at [alembic/versions/0001_init.py](alembic/versions/0001_init.py).
-
-## Testing
-- Tests live in [tests/](tests/). Use pytest:
-```bash
-pytest -q
+```sh
+make up
 ```
-- CI and test container orchestration available via `Makefile` (see [Makefile](Makefile)).
 
-## Development notes
-- Poller stores probe rows via [`app.repos.results.insert_probe_result`](app/repos/results.py).
-- Query helpers for results/health are in [app/repos/results.py](app/repos/results.py) and [app/repos/health.py](app/repos/health.py).
-- Use [`app.repos.sync.sync_targets_to_db`](app/repos/sync.py) to keep DB in sync with YAML.
+To stop and remove containers:
 
-## Contributing
-- Follow formatting/lint rules in `Makefile` (`make fmt`, `make lint`, `make typecheck`).
-- Tests must pass (`make test`).
+```sh
+docker compose down
+```
 
-## Useful links
-- App entry: [app/api/api.py](app/api/api.py)
-- Poller entry: [app/poller/__main__.py](app/poller/__main__.py)
-- Config: [app/config.py](app/config.py)
-- DB helpers: [app/db.py](app/db.py)
-- Repos: [app/repos/results.py](app/repos/results.py), [app/repos/targets.py](app/repos/targets.py), [app/repos/sync.py](app/repos/sync.py)
-- Tests: [tests/](tests/)
+## Basic API examples
+Assumes API reachable at `http://localhost:8000` (container mapping in Docker Compose). See `API.md` for full API docs and examples.
 
-License: see repository root (not specified).
+### Health
+```json
+> curl -s http:/localhost:8000/health | jq
+{
+  "generated_at": "2026-02-23T01:53:52.223350Z",
+  "ok": true,
+  "db": true,
+  "thresholds": {
+    "stale_after_seconds": 180
+  },
+  "stats": {
+    "enabled_targets": 19,
+    "last_result_ts": "2026-02-23T01:53:27.153555Z",
+    "seconds_since_last_result": 25
+  }
+}
+```
+
+### Targets
+#### All Targets
+```json
+> curl -s http:/localhost:8000/targets | jq
+{
+  "generated_at": "2026-02-23T01:55:56.632985Z",
+  "items": [
+    {
+      "id": "fb4c6d37-c55d-44fa-9415-89528fa8290b",
+      "name": "bbc-uk",
+      "type": "http",
+      "enabled": true,
+      "interval_seconds": 60,
+      "timeout_ms": 3000,
+      "host": null,
+      "url": "https://www.bbc.co.uk"
+    },
+    {
+      "id": "fa82f468-1108-466b-9172-d6a356d8e08a",
+      "name": "cat-camera",
+      "type": "icmp",
+      "enabled": true,
+      "interval_seconds": 30,
+      "timeout_ms": 1000,
+      "host": "192.168.1.229",
+      "url": null
+    },
+    {
+      "id": "9e09f8ee-8faf-4989-9a9f-4637dbeff832",
+      "name": "cat-feeder",
+      "type": "icmp",
+      "enabled": true,
+      "interval_seconds": 30,
+      "timeout_ms": 1000,
+      "host": "192.168.1.177",
+      "url": null
+    },
+    {
+      "id": "f5478070-d954-48db-941e-a53e167ee120",
+      "name": "cloudflare-dns",
+      "type": "icmp",
+      "enabled": true,
+      "interval_seconds": 60,
+      "timeout_ms": 1000,
+      "host": "1.1.1.1",
+      "url": null
+    }
+  ]
+}
+```
+
+#### Single Target
+```json
+> curl -s http:/localhost:8000/targets/9e09f8ee-8faf-4989-9a9f-4637dbeff832 | jq
+{
+  "id": "9e09f8ee-8faf-4989-9a9f-4637dbeff832",
+  "name": "cat-feeder",
+  "type": "icmp",
+  "enabled": true,
+  "interval_seconds": 30,
+  "timeout_ms": 1000,
+  "host": "192.168.1.177",
+  "url": null
+}
+```
+
+### Target Results
+```json
+> curl -s http:/localhost:8000/targets/9e09f8ee-8faf-4989-9a9f-4637db
+eff832/results?limit=3 | jq
+{
+  "target_id": "9e09f8ee-8faf-4989-9a9f-4637dbeff832",
+  "target_name": "cat-feeder",
+  "generated_at": "2026-02-23T01:57:50.218217Z",
+  "items": [
+    {
+      "id": 897,
+      "target_id": "9e09f8ee-8faf-4989-9a9f-4637dbeff832",
+      "ts": "2026-02-23T01:57:47.509801Z",
+      "success": true,
+      "latency_ms": 13,
+      "status_code": null,
+      "error": null
+    },
+    {
+      "id": 890,
+      "target_id": "9e09f8ee-8faf-4989-9a9f-4637dbeff832",
+      "ts": "2026-02-23T01:57:14.765047Z",
+      "success": true,
+      "latency_ms": 7,
+      "status_code": null,
+      "error": null
+    },
+    {
+      "id": 879,
+      "target_id": "9e09f8ee-8faf-4989-9a9f-4637dbeff832",
+      "ts": "2026-02-23T01:56:42.018678Z",
+      "success": true,
+      "latency_ms": 5,
+      "status_code": null,
+      "error": null
+    }
+  ]
+}
+```
+
+### Results
+#### Latest
+```json
+> curl -s http:/localhost:8000/results/latest?limit=3 | jq
+{
+  "generated_at": "2026-02-23T02:00:32.381915Z",
+  "items": [
+    {
+      "target_id": "9e09f8ee-8faf-4989-9a9f-4637dbeff832",
+      "target_name": "cat-feeder",
+      "ts": "2026-02-23T02:00:25.094013Z",
+      "success": true,
+      "latency_ms": 9,
+      "status_code": null,
+      "error": null
+    },
+    {
+      "target_id": "fa82f468-1108-466b-9172-d6a356d8e08a",
+      "target_name": "cat-camera",
+      "ts": "2026-02-23T02:00:25.093217Z",
+      "success": true,
+      "latency_ms": 5,
+      "status_code": null,
+      "error": null
+    },
+    {
+      "target_id": "35849f4e-d04b-480d-8822-a4b888fdef45",
+      "target_name": "tokyo-university",
+      "ts": "2026-02-23T02:00:06.916011Z",
+      "success": true,
+      "latency_ms": 2218,
+      "status_code": 200,
+      "error": null
+    }
+  ]
+}
+```
+
+#### Latest by Target
+```json
+> curl -s http:/localhost:8000/results/latest-by-target | jq
+{
+  "generated_at": "2026-02-23T02:03:10.764962Z",
+  "items": [
+    {
+      "target_id": "fb4c6d37-c55d-44fa-9415-89528fa8290b",
+      "target_name": "bbc-uk",
+      "ts": "2026-02-23T02:03:09.957787Z",
+      "success": true,
+      "latency_ms": 251,
+      "status_code": 200,
+      "error": null
+    },
+    {
+      "target_id": "fa82f468-1108-466b-9172-d6a356d8e08a",
+      "target_name": "cat-camera",
+      "ts": "2026-02-23T02:03:08.799660Z",
+      "success": true,
+      "latency_ms": 3,
+      "status_code": null,
+      "error": null
+    },
+    {
+      "target_id": "9e09f8ee-8faf-4989-9a9f-4637dbeff832",
+      "target_name": "cat-feeder",
+      "ts": "2026-02-23T02:03:08.807612Z",
+      "success": true,
+      "latency_ms": 3,
+      "status_code": null,
+      "error": null
+    },
+    {
+      "target_id": "f5478070-d954-48db-941e-a53e167ee120",
+      "target_name": "cloudflare-dns",
+      "ts": "2026-02-23T02:03:08.792135Z",
+      "success": true,
+      "latency_ms": 22,
+      "status_code": null,
+      "error": null
+    }
+  ]
+}
+```
+
+
+## Development & tests
+- Useful Makefile targets: `make test`, `make lint`, `make fmt`, `make typecheck`.
+
+## Notes for maintainers
+- DB session helper: `app.db.session_scope` ensures transactional isolation for repo functions.
+- Default pagination limits: `app.constants.DEFAULT_LIMIT`, `app.constants.MAX_LIMIT`.
+
+## Where to look in the code
+- Poller main loop: `app.poller.__main__.main_async`
+- API routes: `app/api/api.py` and `app/api/routes/`
+- Repos: `app.repos` (DB access helpers and syncing)
+
+## Future Work:
+- Poller: jitter, backoff, concurrency limits, target caching, ipv6 support
+- API: /summary endpoint
+- DB: chron/scheduler to remove old records
