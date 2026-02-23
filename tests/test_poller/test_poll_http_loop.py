@@ -34,7 +34,7 @@ async def test_poll_http_forever_inserts_one_result(monkeypatch):
 
     monkeypatch.setattr(poller_main, "http_probe_once", fake_probe)
     monkeypatch.setattr(poller_main, "insert_probe_result", fake_insert_probe_result)
-    monkeypatch.setattr(poller_main.asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(poller_main.anyio, "sleep", fake_sleep)
 
     with pytest.raises(asyncio.CancelledError):
         await poller_main.poll_http_forever(t)

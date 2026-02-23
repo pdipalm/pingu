@@ -34,7 +34,7 @@ async def test_poll_icmp_forever_inserts_one_result(monkeypatch):
 
     monkeypatch.setattr(poller_main, "icmp_ping_once", fake_ping)
     monkeypatch.setattr(poller_main, "insert_probe_result", fake_insert_probe_result)
-    monkeypatch.setattr(poller_main.asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(poller_main.anyio, "sleep", fake_sleep)
 
     with pytest.raises(asyncio.CancelledError):
         await poller_main.poll_icmp_forever(t)
@@ -77,7 +77,7 @@ async def test_poll_icmp_forever_handles_probe_exception(monkeypatch):
 
     monkeypatch.setattr(poller_main, "icmp_ping_once", boom)
     monkeypatch.setattr(poller_main, "insert_probe_result", fake_insert_probe_result)
-    monkeypatch.setattr(poller_main.asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(poller_main.anyio, "sleep", fake_sleep)
 
     with pytest.raises(asyncio.CancelledError):
         await poller_main.poll_icmp_forever(t)
