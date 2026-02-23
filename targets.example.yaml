@@ -12,3 +12,9 @@ targets:
     interval_seconds: 30
     timeout_ms: 1000
     enabled: true
+  
+  - name: reddit
+    type: http
+    url: https://www.reddit.com
+    interval_seconds: 30
+    timeout_ms: 1000
