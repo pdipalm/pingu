@@ -41,14 +41,18 @@ def upgrade() -> None:
         );
         """)
 
+    # Supports ORDER BY ts DESC, id DESC for global latest queries and keyset pagination.
+    # Includes id to provide deterministic ordering when timestamps collide.
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_probe_results_target_ts_desc
-        ON probe_results (target_id, ts DESC);
+        CREATE INDEX IF NOT EXISTS idx_probe_results_ts_id_desc
+        ON probe_results (ts DESC, id DESC);
         """)
 
+    # Supports per-target queries: latest result (LATERAL top-1) and history ordered by ts DESC.
+    # Composite ordering avoids sort and enables efficient keyset pagination.
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_probe_results_ts_desc
-        ON probe_results (ts DESC);
+        CREATE INDEX IF NOT EXISTS idx_probe_results_target_ts_id_desc
+        ON probe_results (target_id, ts DESC, id DESC);
         """)
 
 
