@@ -24,12 +24,6 @@ logging.basicConfig(
 )
 
 
-def compute_sleep_time(interval_seconds: int, backoff_multiplier: int) -> float:
-    base_sleep = interval_seconds * backoff_multiplier
-    jitter = random.uniform(-0.1 * base_sleep, 0.1 * base_sleep)
-    return max(0.1, base_sleep + jitter)
-
-
 @dataclass(frozen=True)
 class ProbeResult:
     success: bool
@@ -39,6 +33,12 @@ class ProbeResult:
 
 
 ProbeFn = Callable[[], Awaitable[ProbeResult]]
+
+
+def compute_sleep_time(interval_seconds: int, backoff_multiplier: int) -> float:
+    base_sleep = interval_seconds * backoff_multiplier
+    jitter = random.uniform(-0.1 * base_sleep, 0.1 * base_sleep)
+    return max(0.1, base_sleep + jitter)
 
 
 async def _write_result_async(
