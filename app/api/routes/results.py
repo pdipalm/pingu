@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 
 from app.api.schemas import (
     LatestResultByTargetItem,
@@ -27,6 +27,8 @@ def get_latest_result(
     until: datetime | None = None,
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
 ) -> LatestResultsResponse:
+    if since is not None and until is not None and since > until:
+        raise HTTPException(status_code=400, detail="since must be <= until")
     rows = fetch_latest_results(since=since, until=until, limit=limit)
     return LatestResultsResponse(items=[LatestResultItem(**r) for r in rows])
 
